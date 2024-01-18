@@ -88,7 +88,7 @@ def normalize_url(url: str) -> tuple[str, str]:
     if not url.startswith(("https://", "http://")):
         if "://" in url:
             protocol = url.split("://")[0]
-            raise ValueError("protocol {protocol} not supported, please use http(s)://")
+            raise ValueError(f"protocol {protocol} not supported, please use http(s)://")
         url = f"https://{url}"
 
     # search for existing and confirm:

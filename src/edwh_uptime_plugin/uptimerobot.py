@@ -145,16 +145,25 @@ class UptimeRobot:
 
         return resp.get("account", {})
 
-    def get_monitors(self, search: str = "") -> list[UptimeRobotMonitor]:
+    def get_monitors(self, search: str = "", monitor_ids: typing.Iterable[str | int] = ()) -> list[UptimeRobotMonitor]:
         data = {}
         if search:
             data["search"] = search
+
+        if monitor_ids:
+            data["monitors"] = "-".join([str(_) for _ in monitor_ids])
+
         result = self._post("getMonitors", **data).get("monitors")
         if result is None:
             return []
 
         return result
-        # return typing.cast(list[UptimeRobotMonitor], result)
+
+    def get_monitor(self, monitor_id: str) -> Optional[UptimeRobotMonitor]:
+        if monitors := self.get_monitors(monitor_ids=[monitor_id]):
+            return monitors[0]
+
+        return None
 
     def new_monitor(self, friendly_name: str, url: str, monitor_type: MonitorType = MonitorType.HTTP) -> Optional[int]:
         data = {

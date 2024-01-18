@@ -30,6 +30,9 @@ dev = [
     "hatch",
     # "python-semantic-release",
     "black",
+    "isort",
+    "pytest",
+    "pytest-cov",
 ]
 
 [project.urls]
@@ -55,58 +58,33 @@ build_command = "hatch build"
 parser_angular_minor_types = "feat,minor"
 parser_angular_patch_types = "fix,perf,refactor,build,chore,patch"
 
-
-[tool.hatch.envs.default]
-dependencies = [
-    "coverage[toml]>=6.5",
-    "pytest",
-]
-[tool.hatch.envs.default.scripts]
-test = "pytest {args:tests}"
-test-cov = "coverage run -m pytest {args:tests}"
-cov-report = [
-    "- coverage combine",
-    "coverage report",
-]
-cov = [
-    "test-cov",
-    "cov-report",
-]
-
-[[tool.hatch.envs.all.matrix]]
-python = ["3.10", "3.11", "3.12"]
-
-[tool.hatch.envs.lint]
-detached = true
-dependencies = [
-    "black>=23.1.0",
-    "mypy>=1.0.0",
-    "ruff>=0.0.243",
-]
-[tool.hatch.envs.lint.scripts]
-typing = "mypy --install-types --non-interactive {args:src/edwh_uptime_plugin tests}"
-style = [
-    "ruff {args:.}",
-    "black --check --diff {args:.}",
-]
-fmt = [
-    "black {args:.}",
-    "ruff --fix {args:.}",
-    "style",
-]
-all = [
-    "style",
-    "typing",
-]
+[tool.su6]
+# every checker:
+directory = "src"
+# 'all' and 'fix':
+include = []
+exclude = []
+# 'all':
+stop-after-first-failure = false
+# pytest:
+coverage = 100
+badge = false
+# --format json indent
+json-indent = 4
 
 [tool.black]
 target-version = ["py310"]
 line-length = 120
 skip-string-normalization = false
 
+[tool.isort]
+profile = "black"
+extend_skip_glob = ["*.bak/*"]
+
 [tool.ruff]
 target-version = "py310"
 line-length = 120
+
 select = [
     "F", # pyflake error
     "E", # pycodestyle error
@@ -121,20 +99,14 @@ select = [
     # "PTH", # use pathlib - NO: annoying
     "RUF", # ruff rules
 ]
-ignore = [
-    # Allow non-abstract empty methods in abstract base classes
-    "B027",
-    # Allow boolean positional values in function calls, like `dict.get(... True)`
-    "FBT003",
-    "RUF013", # implicit Optional
-    # Ignore checks for possible passwords
-    "S105", "S106", "S107",
-    # Ignore complexity
-    "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
-]
 unfixable = [
     # Don't touch unused imports
     "F401",
+]
+extend-exclude = ["*.bak/", "venv*/"]
+
+ignore = [
+    "RUF013" # implicit Optional
 ]
 
 [tool.ruff.isort]
