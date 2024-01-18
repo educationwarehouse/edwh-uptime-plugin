@@ -1,8 +1,10 @@
 import enum
 import json
+import sys
 import typing
 from typing import Any, Optional
 
+import edwh
 import requests
 from edwh import check_env
 from typing_extensions import NotRequired, Required
@@ -86,12 +88,31 @@ class MonitorType(enum.Enum):
 class UptimeRobot:
     base = URL("https://api.uptimerobot.com/v2/")
 
-    def __init__(self):
-        self.api_key = check_env(
-            "UPTIMEROBOT_APIKEY",
-            default=None,
-            comment="The API key used to manage UptimeRobot monitors.",
-        )
+    _api_key: str = ""  # cached version from .env
+    _verbose: bool = False
+
+    @property
+    def api_key(self) -> str:
+        if not self._api_key:
+            self._api_key = check_env(
+                "UPTIMEROBOT_APIKEY",
+                default=None,
+                comment="The API key used to manage UptimeRobot monitors.",
+            )
+
+        return self._api_key
+
+    def set_verbosity(self, verbose: bool = None) -> None:
+        if verbose is None:
+            verbose = edwh.get_env_value("IS_DEBUG", "0") == "1"
+
+        self._verbose = verbose
+
+    def _log(self, *args: Any) -> None:
+        if not self._verbose:
+            return
+
+        print(*args, file=sys.stderr)
 
     def _post(self, endpoint: str, **input_data: Any) -> UptimeRobotResponse:
         """
@@ -99,7 +120,12 @@ class UptimeRobot:
         """
         input_data.setdefault("format", "json")
         input_data["api_key"] = self.api_key
+
+        self._log("POST", self.base / endpoint, input_data)
+
         resp = (self.base / endpoint).post(json=input_data)
+
+        self._log("RESP", resp.__dict__)
 
         if not resp.ok:
             raise UptimeRobotException(resp)
@@ -114,7 +140,7 @@ class UptimeRobot:
 
         return output_data
 
-    def get_account_details(self):
+    def get_account_details(self) -> Optional[UptimeRobotAccount]:
         resp = self._post("getAccountDetails")
 
         return resp.get("account", {})
@@ -140,52 +166,56 @@ class UptimeRobot:
 
         return response.get("monitor", {}).get("id")
 
-    def edit_monitor(self, monitor_id, new_data):
-        return self._post("editMonitor", input_data={"monitor_id": monitor_id, "new_data": new_data})
+    def edit_monitor(self, monitor_id: int, new_data: AnyDict) -> bool:
+        resp = self._post("editMonitor", id=monitor_id, **new_data)
+
+        return resp.get("monitor", {}).get("id") == monitor_id
 
     def delete_monitor(self, monitor_id: int) -> bool:
         resp = self._post("deleteMonitor", id=monitor_id)
 
         return resp.get("monitor", {}).get("id") == monitor_id
 
-    def reset_monitor(self, monitor_id):
-        return self._post("resetMonitor", input_data={"monitor_id": monitor_id})
+    def reset_monitor(self, monitor_id: int) -> bool:
+        resp = self._post("resetMonitor", id=monitor_id)
 
-    def get_alert_contacts(self):
-        return self._post("getAlertContacts")
+        return resp.get("monitor", {}).get("id") == monitor_id
 
-    def new_alert_contact(self, contact_data):
-        return self._post("newAlertContact", input_data=contact_data)
-
-    def edit_alert_contact(self, contact_id, new_data):
-        return self._post("editAlertContact", input_data={"contact_id": contact_id, "new_data": new_data})
-
-    def delete_alert_contact(self, contact_id):
-        return self._post("deleteAlertContact", input_data={"contact_id": contact_id})
-
-    def get_m_windows(self):
-        return self._post("getMWindows")
-
-    def new_m_window(self, window_data):
-        return self._post("newMWindow", input_data=window_data)
-
-    def edit_m_window(self, window_id, new_data):
-        return self._post("editMWindow", input_data={"window_id": window_id, "new_data": new_data})
-
-    def delete_m_window(self, window_id):
-        return self._post("deleteMWindow", input_data={"window_id": window_id})
-
-    def get_psps(self):
-        return self._post("getPSPs")
-
-    def new_psp(self, psp_data):
-        return self._post("newPSP", input_data=psp_data)
-
-    def edit_psp(self, psp_id, new_data):
-        return self._post("editPSP", input_data={"psp_id": psp_id, "new_data": new_data})
-
-    def delete_psp(self, psp_id):
-        return self._post("deletePSP", input_data={"psp_id": psp_id})
+    # def get_alert_contacts(self):
+    #     return self._post("getAlertContacts")
+    #
+    # def new_alert_contact(self, contact_data):
+    #     return self._post("newAlertContact", input_data=contact_data)
+    #
+    # def edit_alert_contact(self, contact_id, new_data):
+    #     return self._post("editAlertContact", input_data={"contact_id": contact_id, "new_data": new_data})
+    #
+    # def delete_alert_contact(self, contact_id):
+    #     return self._post("deleteAlertContact", input_data={"contact_id": contact_id})
+    #
+    # def get_m_windows(self):
+    #     return self._post("getMWindows")
+    #
+    # def new_m_window(self, window_data):
+    #     return self._post("newMWindow", input_data=window_data)
+    #
+    # def edit_m_window(self, window_id, new_data):
+    #     return self._post("editMWindow", input_data={"window_id": window_id, "new_data": new_data})
+    #
+    # def delete_m_window(self, window_id):
+    #     return self._post("deleteMWindow", input_data={"window_id": window_id})
+    #
+    # def get_psps(self):
+    #     return self._post("getPSPs")
+    #
+    # def new_psp(self, psp_data):
+    #     return self._post("newPSP", input_data=psp_data)
+    #
+    # def edit_psp(self, psp_id, new_data):
+    #     return self._post("editPSP", input_data={"psp_id": psp_id, "new_data": new_data})
+    #
+    # def delete_psp(self, psp_id):
+    #     return self._post("deletePSP", input_data={"psp_id": psp_id})
 
     @staticmethod
     def format_status(status_code: int) -> str:
@@ -199,3 +229,4 @@ class UptimeRobot:
 
 
 uptime_robot = UptimeRobot()
+uptime_robot.set_verbosity()
