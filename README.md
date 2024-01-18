@@ -1,35 +1,44 @@
-# edwh-demo-plugin
+# edwh-uptime-plugin
 
-[![PyPI - Version](https://img.shields.io/pypi/v/edwh-demo-plugin.svg)](https://pypi.org/project/edwh-demo-plugin)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/edwh-demo-plugin.svg)](https://pypi.org/project/edwh-demo-plugin)
+[![PyPI - Version](https://img.shields.io/pypi/v/edwh-uptime-plugin.svg)](https://pypi.org/project/edwh-uptime-plugin)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/edwh-uptime-plugin.svg)](https://pypi.org/project/edwh-uptime-plugin)
 
 -----
+
+UptimeRobot API integration for the `edwh` tool.
 
 **Table of Contents**
 
 - [Installation](#installation)
 - [License](#license)
 
-## USING THIS TEMPLATE REPOSITORY
-1. remove this markdown section;
-2. replace 'demo' in README.md, pyproject.toml and the name of the plugin in `src` to your actual plugin name;
-3. (add your actual plugin code of course);
-4. run `semantic-release publish`, `hatch build -c` and `hatch publish`.
-
 ## Installation
 
 ```console
-pip install edwh-demo-plugin
+pip install edwh-uptime-plugin
 ```
 
 But probably you want to install the whole edwh package:
 
 ```console
-pipx install edwh[demo]
+pipx install edwh[uptime]
 # or
 pipx install edwh[plugins,omgeving]
 ```
 
+## Usage
+
+```bash
+# set your api key and see your profile info:
+edwh uptime.account
+
+# see the other available commands:
+edwh help uptime
+```
+
+`UPTIMEROBOT_APIKEY` is saved in a `.env` file. You can also set `IS_DEBUG=1` if you want to see verbose logging (every
+request and response).
+
 ## License
 
-`edwh-demo-plugin` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+`edwh-uptime-plugin` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.

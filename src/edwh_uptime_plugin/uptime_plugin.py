@@ -1,3 +1,7 @@
+"""
+UptimeRobot API integration for the `edwh` tool.
+"""
+
 import json
 from typing import Optional
 
