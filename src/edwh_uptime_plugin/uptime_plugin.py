@@ -6,9 +6,29 @@ import json
 from typing import Optional
 
 import edwh
+from edwh.helpers import interactive_selected_checkbox_values
+from edwh.tasks import dc_config, get_hosts_for_service
 from invoke import Context, task
 
 from .uptimerobot import MonitorType, UptimeRobotMonitor, uptime_robot
+
+
+@task()
+def auto_add(ctx: Context, directory: str = None):
+    """
+    Find domains based on traefik labels and add them (if desired).
+    """
+    directory = directory or "."
+
+    with ctx.cd(directory):
+        config = dc_config(ctx)
+
+        domains = set()
+        for service in config.get("services", {}).values():
+            domains.update(get_hosts_for_service(service))
+
+        for url in interactive_selected_checkbox_values(list(domains)):
+            add(ctx, url)
 
 
 @task()
@@ -210,7 +230,7 @@ def edit(_: Context, url: str, friendly_name: Optional[str] = None) -> None:
     new_data = {
         "url": url,
         "friendly_name": friendly_name or monitor.get("friendly_name", ""),
-        "monitor_type": monitor.get("type", MonitorType.HTTP),  # todo: support more?
+        "monitor_type": monitor.get("type", MonitorType.HTTP),  # todo: support more types?
         # ...
     }
 
