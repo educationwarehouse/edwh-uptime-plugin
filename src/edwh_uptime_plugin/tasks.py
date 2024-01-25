@@ -28,14 +28,13 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
     """
     ran_before = edwh.get_env_value("UPTIME_AUTOADD_DONE", "0") == "1"
     if ran_before and not force:
-        if not quiet:
-            cprint(
-                "Auto-add flag already set; "
-                "Remove 'UPTIME_AUTOADD_DONE' from your .env to allow rerunning, or set --force. "
-                "Stopping now.",
-                color="yellow",
-                file=sys.stderr,
-            )
+        cprint(
+            "Auto-add flag already set; "
+            "Remove 'UPTIME_AUTOADD_DONE' from your .env to allow rerunning, or set --force. "
+            "Stopping now.",
+            color=None if quiet else "yellow",
+            file=sys.stderr,
+        )
         return
 
     directory = directory or "."
@@ -50,11 +49,16 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
             domains.update(get_hosts_for_service(service))
 
         if not domains:
-            if not quiet:
-                cprint("No docker services/domains found; " "Could not auto-add anything.", color="red", file=sys.stderr)
+            cprint("No docker services/domains found; " "Could not auto-add anything.",
+                   color=None if quiet else "red",
+                   file=sys.stderr)
             return
 
-        for url in interactive_selected_checkbox_values(list(domains)):
+        for url in interactive_selected_checkbox_values(
+            list(domains),
+            prompt="Which domains would you like to add to Uptime Robot? "
+                   "(use arrow keys, spacebar, or digit keys, press 'Enter' to finish):"
+        ):
             add(ctx, url)
 
     # todo: Path(directory) / .env may be better, but `set_env_value` doesn't work with -H on remote servers at all yet
