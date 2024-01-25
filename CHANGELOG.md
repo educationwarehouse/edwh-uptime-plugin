@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.3 (2024-01-25)
+
+### Fix
+
+* **auto-add:** Better prompt for domain selection; made --quiet still output but without color ([`306a5ea`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/306a5ea5c4d021894940e94f5b1041aabde4022b))
+
 ## v0.2.2 (2024-01-25)
 
 ### Fix
