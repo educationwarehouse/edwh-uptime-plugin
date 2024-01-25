@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.5 (2024-01-25)
+
+### Fix
+
+* **auto-add:** Don't query users for domains to add if the provided api key is empty ([`7139460`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/713946079823dcde55bf3deb40e2b71cfe3cc92c))
+
 ## v0.2.4 (2024-01-25)
 
 ### Fix
