@@ -7,9 +7,11 @@ from typing import Any, Optional
 import edwh
 import requests
 from edwh import check_env
-from termcolor._types import Color
 from typing_extensions import NotRequired, Required
 from yayarl import URL
+
+if typing.TYPE_CHECKING:
+    from termcolor._types import Color
 
 AnyDict: typing.TypeAlias = dict[str, Any]
 
@@ -238,8 +240,8 @@ class UptimeRobot:
         }.get(status_code, f"Unknown status '{status_code}'!")
 
     @staticmethod
-    def format_status_color(status_code: int) -> Color:
-        colors: dict[int, Color] = {
+    def format_status_color(status_code: int) -> "Color":
+        colors: dict[int, "Color"] = {
             0: "grey",
             1: "grey",
             2: "green",

@@ -25,7 +25,8 @@ classifiers = [
 ]
 dependencies = [
     'edwh>=0.37.0',
-    'yayarl'
+    'yayarl',
+    'termcolor',
 ]
 
 [project.optional-dependencies]
