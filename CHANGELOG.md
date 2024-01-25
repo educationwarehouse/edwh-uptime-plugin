@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.1 (2024-01-25)
+
+### Fix
+
+* ImportError: No module named 'termcolor._types' ([`24aa55f`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/24aa55f069ee2970a17788c37ff1437e14d93d11))
+
 ## v0.2.0 (2024-01-25)
 
 ### Documentation
