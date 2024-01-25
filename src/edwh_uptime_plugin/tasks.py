@@ -17,23 +17,25 @@ from .uptimerobot import MonitorType, UptimeRobotMonitor, uptime_robot
 
 
 @task()
-def auto_add(ctx: Context, directory: str = None, force: bool = False):
+def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bool = False):
     """
     Find domains based on traefik labels and add them (if desired).
 
     :param ctx: invoke/fab context
     :param directory: where to look for a docker-compose file? Default is current directory
     :param force: perform auto-add even if UPTIME_AUTOADD_DONE flag is already set
+    :param quiet: don't print in color on error (useful for `ew setup`)
     """
     ran_before = edwh.get_env_value("UPTIME_AUTOADD_DONE", "0") == "1"
     if ran_before and not force:
-        cprint(
-            "Auto-add flag already set; "
-            "Remove 'UPTIME_AUTOADD_DONE' from your .env to allow rerunning, or set --force. "
-            "Stopping now.",
-            color="yellow",
-            file=sys.stderr,
-        )
+        if not quiet:
+            cprint(
+                "Auto-add flag already set; "
+                "Remove 'UPTIME_AUTOADD_DONE' from your .env to allow rerunning, or set --force. "
+                "Stopping now.",
+                color="yellow",
+                file=sys.stderr,
+            )
         return
 
     directory = directory or "."
@@ -48,7 +50,8 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False):
             domains.update(get_hosts_for_service(service))
 
         if not domains:
-            cprint("No docker services/domains found; " "Could not auto-add anything.", color="red", file=sys.stderr)
+            if not quiet:
+                cprint("No docker services/domains found; " "Could not auto-add anything.", color="red", file=sys.stderr)
             return
 
         for url in interactive_selected_checkbox_values(list(domains)):
