@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.2 (2024-01-25)
+
+### Fix
+
+* Add --quiet to auto-add to ignore warnings/errors quietly ([`36e2d6a`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/36e2d6abd9fb08970c184df93025883c325e1dd7))
+
 ## v0.2.1 (2024-01-25)
 
 ### Fix
