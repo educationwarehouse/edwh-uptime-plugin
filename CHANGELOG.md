@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.4 (2024-01-25)
+
+### Fix
+
+* If API key in .env is left empty, don't crash with an error but show a warning instead ([`2ff8713`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/2ff87131aa1ff450b1f7226eeb12a0530b38a9dd))
+
 ## v0.2.3 (2024-01-25)
 
 ### Fix
