@@ -1,8 +1,9 @@
 """
 UptimeRobot API integration for the `edwh` tool.
 """
-
+import sys
 import typing
+from pathlib import Path
 from typing import Optional
 
 import edwh
@@ -16,21 +17,45 @@ from .uptimerobot import MonitorType, UptimeRobotMonitor, uptime_robot
 
 
 @task()
-def auto_add(ctx: Context, directory: str = None):
+def auto_add(ctx: Context, directory: str = None, force: bool = False):
     """
     Find domains based on traefik labels and add them (if desired).
+
+    :param ctx: invoke/fab context
+    :param directory: where to look for a docker-compose file? Default is current directory
+    :param force: perform auto-add even if UPTIME_AUTOADD_DONE flag is already set
     """
+    ran_before = edwh.get_env_value("UPTIME_AUTOADD_DONE", "0") == "1"
+    if ran_before and not force:
+        cprint(
+            "Auto-add flag already set; "
+            "Remove 'UPTIME_AUTOADD_DONE' from your .env to allow rerunning, or set --force. "
+            "Stopping now.",
+            color="yellow",
+            file=sys.stderr,
+        )
+        return
+
     directory = directory or "."
 
     with ctx.cd(directory):
         config = dc_config(ctx)
 
         domains = set()
-        for service in config.get("services", {}).values():
+        services = config.get("services", {})
+
+        for service in services.values():
             domains.update(get_hosts_for_service(service))
+
+        if not domains:
+            cprint("No docker services/domains found; " "Could not auto-add anything.", color="red", file=sys.stderr)
+            return
 
         for url in interactive_selected_checkbox_values(list(domains)):
             add(ctx, url)
+
+    # todo: Path(directory) / .env may be better, but `set_env_value` doesn't work with -H on remote servers at all yet
+    edwh.set_env_value(Path(".env"), "UPTIME_AUTOADD_DONE", "1")
 
 
 def output_statuses_plaintext(monitors: typing.Iterable[UptimeRobotMonitor]) -> None:
@@ -73,7 +98,7 @@ def status(_: Context, url: str, fmt: SUPPORTED_FORMATS = DEFAULT_PLAINTEXT) -> 
     """
     monitors = uptime_robot.get_monitors(url)
     if not monitors:
-        print("No monitor found!")
+        cprint("No monitor found!", color="red", file=sys.stderr)
         return
 
     output_statuses(monitors, fmt)
@@ -169,7 +194,7 @@ def add(_: Context, url: str, friendly_name: str = "") -> None:
     url, domain = normalize_url(url)
 
     if existing := uptime_robot.get_monitors(domain):
-        print("A similar domain was already added:")
+        cprint("A similar domain was already added:", color="yellow", file=sys.stderr)
         for monitor in existing:
             print(monitor["friendly_name"], monitor["url"])
         if not edwh.confirm("Are you sure you want to continue? [yN]", default=False):
@@ -183,9 +208,9 @@ def add(_: Context, url: str, friendly_name: str = "") -> None:
     )
 
     if not monitor_id:
-        print("No monitor was added")
+        cprint("No monitor was added", color="red")
     else:
-        print(f"Monitor '{friendly_name}' was added: {monitor_id}")
+        cprint(f"Monitor '{friendly_name}' was added: {monitor_id}", color="green")
 
 
 def select_monitor(url: str) -> UptimeRobotMonitor | None:
@@ -197,7 +222,7 @@ def select_monitor(url: str) -> UptimeRobotMonitor | None:
     """
     monitors = uptime_robot.get_monitors(url)
     if not monitors:
-        print(f"No such monitor could be found {url}")
+        cprint(f"No such monitor could be found {url}", color="red")
         return None
     if len(monitors) > 1:
         print(f"Ambiguous url {url} could mean:")
@@ -241,9 +266,9 @@ def remove(_: Context, url: str) -> None:
     monitor_id = monitor["id"]
 
     if uptime_robot.delete_monitor(monitor_id):
-        print(f"Monitor {monitor['friendly_name']} removed!")
+        cprint(f"Monitor {monitor['friendly_name']} removed!", color="green")
     else:
-        print(f"Monitor {monitor['friendly_name']} could not be deleted.")
+        cprint(f"Monitor {monitor['friendly_name']} could not be deleted.", color="green")
 
 
 @task(aliases=("update",))
@@ -271,9 +296,9 @@ def edit(_: Context, url: str, friendly_name: Optional[str] = None) -> None:
     }
 
     if uptime_robot.edit_monitor(monitor_id, new_data):
-        print(f"Monitor {monitor['friendly_name']} updated!")
+        cprint(f"Monitor {monitor['friendly_name']} updated!", color="green")
     else:
-        print(f"Monitor {monitor['friendly_name']} could not be updated.")
+        cprint(f"Monitor {monitor['friendly_name']} could not be updated.", color="red")
 
 
 @task()
@@ -289,9 +314,9 @@ def reset(_: Context, url: str) -> None:
     monitor_id = monitor["id"]
 
     if uptime_robot.reset_monitor(monitor_id):
-        print(f"Monitor {monitor['friendly_name']} reset!")
+        cprint(f"Monitor {monitor['friendly_name']} reset!", color="green")
     else:
-        print(f"Monitor {monitor['friendly_name']} could not be reset.")
+        cprint(f"Monitor {monitor['friendly_name']} could not be reset.", color="red")
 
 
 @task()
