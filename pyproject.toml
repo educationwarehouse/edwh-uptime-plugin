@@ -23,7 +23,10 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ['edwh', 'yayarl']
+dependencies = [
+    'edwh>=0.37.0',
+    'yayarl'
+]
 
 [project.optional-dependencies]
 dev = [

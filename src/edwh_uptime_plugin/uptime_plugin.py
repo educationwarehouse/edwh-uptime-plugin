@@ -2,14 +2,16 @@
 UptimeRobot API integration for the `edwh` tool.
 """
 
-import json
+import typing
 from typing import Optional
 
 import edwh
 from edwh.helpers import interactive_selected_checkbox_values
 from edwh.tasks import dc_config, get_hosts_for_service
 from invoke import Context, task
+from termcolor import cprint
 
+from .dumpers import DEFAULT_PLAINTEXT, DEFAULT_STRUCTURED, SUPPORTED_FORMATS, dumpers
 from .uptimerobot import MonitorType, UptimeRobotMonitor, uptime_robot
 
 
@@ -31,50 +33,85 @@ def auto_add(ctx: Context, directory: str = None):
             add(ctx, url)
 
 
+def output_statuses_plaintext(monitors: typing.Iterable[UptimeRobotMonitor]) -> None:
+    for monitor in monitors:
+        status = uptime_robot.format_status(monitor["status"])
+        color = uptime_robot.format_status_color(monitor["status"])
+
+        cprint(f"- {monitor['url']}: {status}", color=color)
+
+
+def output_statuses_structured(
+    monitors: typing.Iterable[UptimeRobotMonitor], fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED
+) -> None:
+    statuses = {}
+    for monitor in monitors:
+        statuses[monitor["url"]] = uptime_robot.format_status(monitor["status"])
+
+    dumpers[fmt](
+        {
+            "statuses": statuses,
+        }
+    )
+
+
+def output_statuses(monitors: typing.Iterable[UptimeRobotMonitor], fmt: SUPPORTED_FORMATS) -> None:
+    match fmt:
+        case "json" | "yml" | "yaml":
+            output_statuses_structured(monitors, fmt)
+        case _:
+            output_statuses_plaintext(monitors)
+
+
 @task()
-def status(_: Context, url: str) -> None:
+def status(_: Context, url: str, fmt: SUPPORTED_FORMATS = DEFAULT_PLAINTEXT) -> None:
     """
     Show a specific monitor by (partial) url or label.
 
     :param url: required positional argument of the URL to show the status for
+    :param fmt: Output format (plaintext, json or yaml)
     """
     monitors = uptime_robot.get_monitors(url)
     if not monitors:
         print("No monitor found!")
         return
 
-    for monitor in monitors:
-        print(f"- {monitor['url']}:", uptime_robot.format_status(monitor["status"]))
+    output_statuses(monitors, fmt)
 
 
 @task(name="monitors")
-def monitors_verbose(_: Context, search: str = "") -> None:
+def monitors_verbose(_: Context, search: str = "", fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED) -> None:
     """
     Show all monitors full data as dict.
     You can optionally add a search term, which will look in the URL and label.
 
     :param search: (partial) URL or monitor name to filter by
+    :param fmt: output format (json or yaml)
     """
-    print(json.dumps(uptime_robot.get_monitors(search), indent=2))
+    monitors = uptime_robot.get_monitors(search)
+    dumpers[fmt]({"monitors": monitors})
 
 
 @task(name="list")
-def list_statuses(_: Context, search: str = "") -> None:
+def list_statuses(_: Context, search: str = "", fmt: SUPPORTED_FORMATS = DEFAULT_PLAINTEXT) -> None:
     """
     Show the status for each monitor.
 
     :param search: (partial) URL or monitor name to filter by
+    :param fmt: text (default), json or yaml
     """
-    for monitor in uptime_robot.get_monitors(search):
-        print(f"- {monitor['url']}:", uptime_robot.format_status(monitor["status"]))
+    monitors = uptime_robot.get_monitors(search)
+
+    output_statuses(monitors, fmt)
 
 
 @task()
-def up(_: Context, strict: bool = False) -> None:
+def up(_: Context, strict: bool = False, fmt: SUPPORTED_FORMATS = DEFAULT_PLAINTEXT) -> None:
     """
     List monitors that are up (probably).
 
     :param strict: If strict is True, only status 2 is allowed
+    :param fmt: output format (default is plaintext)
     """
     min_status = 2 if strict else 0
     max_status = 3
@@ -82,24 +119,23 @@ def up(_: Context, strict: bool = False) -> None:
     monitors = uptime_robot.get_monitors()
     monitors = [_ for _ in monitors if min_status <= _["status"] < max_status]
 
-    for monitor in monitors:
-        print(f"- {monitor['url']}:", uptime_robot.format_status(monitor["status"]))
+    output_statuses(monitors, fmt)
 
 
 @task()
-def down(_: Context, strict: bool = False) -> None:
+def down(_: Context, strict: bool = False, fmt: SUPPORTED_FORMATS = DEFAULT_PLAINTEXT) -> None:
     """
     List monitors that are down (probably).
 
     :param strict: If strict is True, 'seems down' is ignored
+    :param fmt: output format (default is plaintext)
     """
     min_status = 9 if strict else 8
 
     monitors = uptime_robot.get_monitors()
     monitors = [_ for _ in monitors if _["status"] >= min_status]
 
-    for monitor in monitors:
-        print(f"- {monitor['url']}:", uptime_robot.format_status(monitor["status"]))
+    output_statuses(monitors, fmt)
 
 
 def extract_friendly_name(url: str) -> str:
@@ -259,9 +295,9 @@ def reset(_: Context, url: str) -> None:
 
 
 @task()
-def account(_: Context) -> None:
+def account(_: Context, fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED) -> None:
     """
     Show information about the acccount related to the current API key.
     """
-
-    print(json.dumps(uptime_robot.get_account_details(), indent=2))
+    data = {"account": uptime_robot.get_account_details()}
+    dumpers[fmt](data)

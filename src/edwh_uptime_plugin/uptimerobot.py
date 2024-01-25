@@ -236,6 +236,16 @@ class UptimeRobot:
             9: "down",
         }.get(status_code, f"Unknown status '{status_code}'!")
 
+    @staticmethod
+    def format_status_color(status_code: int) -> str:
+        return {
+            0: "grey",
+            1: "grey",
+            2: "green",
+            8: "red",
+            9: "red",
+        }.get(status_code, "grey")
+
 
 uptime_robot = UptimeRobot()
 uptime_robot.set_verbosity()
