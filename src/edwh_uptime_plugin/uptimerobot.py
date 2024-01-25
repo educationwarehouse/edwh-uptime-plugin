@@ -2,6 +2,7 @@ import enum
 import json
 import sys
 import typing
+import warnings
 from typing import Any, Optional
 
 import edwh
@@ -121,6 +122,10 @@ class UptimeRobot:
         """
         :raise UptimeRobotError: if the request returns an error status code
         """
+        if not self.api_key:
+            warnings.warn("Uptime Robot API key empty - can't perform this request!")
+            return {}
+
         input_data.setdefault("format", "json")
         input_data["api_key"] = self.api_key
 
