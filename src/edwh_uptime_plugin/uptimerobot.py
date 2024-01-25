@@ -106,6 +106,13 @@ class UptimeRobot:
 
         return self._api_key
 
+    @property
+    def has_api_key(self) -> bool:
+        result = bool(self.api_key)
+        if not result:
+            warnings.warn("Uptime Robot API key empty - can't perform requests!")
+        return result
+
     def set_verbosity(self, verbose: bool = None) -> None:
         if verbose is None:
             verbose = edwh.get_env_value("IS_DEBUG", "0") == "1"
@@ -122,8 +129,7 @@ class UptimeRobot:
         """
         :raise UptimeRobotError: if the request returns an error status code
         """
-        if not self.api_key:
-            warnings.warn("Uptime Robot API key empty - can't perform this request!")
+        if not self.has_api_key:
             return {}
 
         input_data.setdefault("format", "json")

@@ -26,6 +26,10 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
     :param force: perform auto-add even if UPTIME_AUTOADD_DONE flag is already set
     :param quiet: don't print in color on error (useful for `ew setup`)
     """
+    if not uptime_robot.has_api_key:
+        # don't even query the user then!
+        return
+
     ran_before = edwh.get_env_value("UPTIME_AUTOADD_DONE", "0") == "1"
     if ran_before and not force:
         cprint(
