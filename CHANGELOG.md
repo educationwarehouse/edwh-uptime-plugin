@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.1 (2024-01-25)
+
+### Fix
+
+* **autoadd:** Add flag in .env to prevent asking the same question again ([`e6d5894`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/e6d58946b4e2e4f88557e1daec5c4cf2c5754e82))
+
 ## v0.1.0 (2024-01-25)
 
 ### Feature
