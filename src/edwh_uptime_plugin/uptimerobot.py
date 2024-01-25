@@ -7,6 +7,7 @@ from typing import Any, Optional
 import edwh
 import requests
 from edwh import check_env
+from termcolor._types import Color
 from typing_extensions import NotRequired, Required
 from yayarl import URL
 
@@ -237,14 +238,16 @@ class UptimeRobot:
         }.get(status_code, f"Unknown status '{status_code}'!")
 
     @staticmethod
-    def format_status_color(status_code: int) -> str:
-        return {
+    def format_status_color(status_code: int) -> Color:
+        colors: dict[int, Color] = {
             0: "grey",
             1: "grey",
             2: "green",
             8: "red",
             9: "red",
-        }.get(status_code, "grey")
+        }
+
+        return colors.get(status_code, "grey")
 
 
 uptime_robot = UptimeRobot()

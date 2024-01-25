@@ -3,13 +3,16 @@ import typing
 from collections import defaultdict
 
 import yaml
+from typing_extensions import Never
 
 
-def noop(*_, **__):
+def noop(*_, **__) -> Never:
     raise ValueError("Invalid output format.")
 
 
-dumpers = defaultdict(noop)
+AnyFunc = typing.Callable[..., None]
+
+dumpers: dict[str, AnyFunc] = defaultdict(noop)
 dumpers["text"] = dumpers["plaintext"] = print
 dumpers["json"] = lambda data, *a, **kw: print(
     json.dumps(

@@ -45,7 +45,7 @@ Source = "https://github.com/educationwarehouse/edwh-uptime-plugin"
 
 # https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/#using-package-metadata
 [project.entry-points."edwh.tasks"]
-uptime = "edwh_uptime_plugin.uptime_plugin"
+uptime = "edwh_uptime_plugin.tasks"
 
 [tool.hatch.version]
 path = "src/edwh_uptime_plugin/__about__.py"
