@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.0 (2024-01-25)
+
+### Documentation
+
+* Explained how to use it as a library ([`23646c6`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/23646c62246102f6dbc72e849842d621632fd368))
+
 ## v0.1.1 (2024-01-25)
 
 ### Fix
