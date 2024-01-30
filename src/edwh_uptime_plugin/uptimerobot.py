@@ -51,6 +51,16 @@ class UptimeRobotAccount(typing.TypedDict, total=False):
     # ...
 
 
+class UptimeRobotDashboard(typing.TypedDict, total=False):
+    id: int
+    friendly_name: str
+    monitors: list[int]
+    sort: int
+    status: int
+    standard_url: str
+    custom_url: str
+
+
 class UptimeRobotResponse(typing.TypedDict, total=False):
     stat: typing.Literal["ok", "fail"]
     error: NotRequired[UptimeRobotErrorResponse]
@@ -59,6 +69,7 @@ class UptimeRobotResponse(typing.TypedDict, total=False):
     monitor: NotRequired["UptimeRobotMonitor"]
     monitors: NotRequired[list["UptimeRobotMonitor"]]
     account: NotRequired[UptimeRobotAccount]
+    psps: NotRequired[list[UptimeRobotDashboard]]
 
 
 class UptimeRobotMonitor(typing.TypedDict, total=False):
@@ -228,17 +239,26 @@ class UptimeRobot:
     # def delete_m_window(self, window_id):
     #     return self._post("deleteMWindow", input_data={"window_id": window_id})
     #
-    # def get_psps(self):
-    #     return self._post("getPSPs")
-    #
-    # def new_psp(self, psp_data):
-    #     return self._post("newPSP", input_data=psp_data)
-    #
-    # def edit_psp(self, psp_id, new_data):
-    #     return self._post("editPSP", input_data={"psp_id": psp_id, "new_data": new_data})
-    #
-    # def delete_psp(self, psp_id):
-    #     return self._post("deletePSP", input_data={"psp_id": psp_id})
+    def get_psps(self) -> list[UptimeRobotDashboard]:
+        resp = self._post("getPSPs")
+
+        return resp.get("psps")
+
+    def get_psp(self, idx: str) -> UptimeRobotDashboard | None:
+        resp = self._post("getPSPs", psps=idx)
+
+        psps = resp.get("psps")
+
+        return psps[0] if psps else None
+
+    def new_psp(self, psp_data):
+        return self._post("newPSP", input_data=psp_data)
+
+    def edit_psp(self, psp_id, new_data):
+        return self._post("editPSP", input_data={"psp_id": psp_id, "new_data": new_data})
+
+    def delete_psp(self, psp_id):
+        return self._post("deletePSP", input_data={"psp_id": psp_id})
 
     @staticmethod
     def format_status(status_code: int) -> str:

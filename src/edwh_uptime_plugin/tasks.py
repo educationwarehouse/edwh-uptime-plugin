@@ -53,15 +53,17 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
             domains.update(get_hosts_for_service(service))
 
         if not domains:
-            cprint("No docker services/domains found; " "Could not auto-add anything.",
-                   color=None if quiet else "red",
-                   file=sys.stderr)
+            cprint(
+                "No docker services/domains found; " "Could not auto-add anything.",
+                color=None if quiet else "red",
+                file=sys.stderr,
+            )
             return
 
         for url in interactive_selected_checkbox_values(
             list(domains),
             prompt="Which domains would you like to add to Uptime Robot? "
-                   "(use arrow keys, spacebar, or digit keys, press 'Enter' to finish):"
+            "(use arrow keys, spacebar, or digit keys, press 'Enter' to finish):",
         ):
             add(ctx, url)
 
@@ -337,3 +339,35 @@ def account(_: Context, fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED) -> None:
     """
     data = {"account": uptime_robot.get_account_details()}
     dumpers[fmt](data)
+
+
+@task()
+def dashboards(_: Context, fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED):
+    data = {"dashboards": uptime_robot.get_psps()}
+    dumpers[fmt](data)
+
+
+@task()
+def dashboard(_: Context, dashboard_id: str, fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED):
+    dashboard_info = uptime_robot.get_psp(dashboard_id)
+    data = {"dashboard": dashboard_info}
+    if dashboard_info:
+        # resolve monitor names
+        dashboard_info["monitors"] = uptime_robot.get_monitors(monitor_ids=dashboard_info["monitors"])
+
+    dumpers[fmt](data)
+
+
+@task()
+def edit_dashboard(_: Context, dashboard_id: int):
+    dashboard_info = uptime_robot.get_psp(dashboard_id)
+    if not dashboard_info:
+        print("Invalid dashboard id.", file=sys.stderr)
+        return
+
+    monitors = uptime_robot.get_monitors()
+
+    print(
+        [_["id"] for _ in monitors],
+        dashboard_info["monitors"],
+    )
