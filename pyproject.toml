@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-    'edwh>=0.37.0',
+    'edwh>=0.38.0',
     'yayarl',
     'termcolor',
 ]

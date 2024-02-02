@@ -30,6 +30,10 @@ class UptimeRobotException(Exception):
         self.extra = extra
 
 
+class UptimeRobotRatelimit(UptimeRobotException):
+    ...
+
+
 class UptimeRobotErrorResponse(typing.TypedDict):
     type: str
     message: str
@@ -66,9 +70,12 @@ class UptimeRobotResponse(typing.TypedDict, total=False):
     error: NotRequired[UptimeRobotErrorResponse]
     pagination: NotRequired[UptimeRobotPagination]
     # actual data differs per endpoint:
+    account: NotRequired[UptimeRobotAccount]
+
     monitor: NotRequired["UptimeRobotMonitor"]
     monitors: NotRequired[list["UptimeRobotMonitor"]]
-    account: NotRequired[UptimeRobotAccount]
+
+    psp: NotRequired[UptimeRobotDashboard]
     psps: NotRequired[list[UptimeRobotDashboard]]
 
 
@@ -153,7 +160,11 @@ class UptimeRobot:
         self._log("RESP", resp.__dict__)
 
         if not resp.ok:
-            raise UptimeRobotException(resp)
+            match resp.status_code:
+                case 429:
+                    raise UptimeRobotRatelimit(resp)
+                case _:
+                    raise UptimeRobotException(resp)
 
         try:
             output_data = resp.json()  # type: UptimeRobotResponse
@@ -164,6 +175,17 @@ class UptimeRobot:
             raise UptimeRobotException(resp, output_data.get("error", output_data))
 
         return output_data
+
+    @classmethod
+    def format_list(cls, values: typing.Iterable[typing.Any]) -> str:
+        """
+        UptimeRobot specific way to format a list: "-"-separated.
+
+        Examples:
+             UptimeRobot.format_list([1, 2, 3])
+             # -> "1-2-3"
+        """
+        return "-".join([str(_) for _ in values])
 
     def get_account_details(self) -> Optional[UptimeRobotAccount]:
         resp = self._post("getAccountDetails")
@@ -176,7 +198,7 @@ class UptimeRobot:
             data["search"] = search
 
         if monitor_ids:
-            data["monitors"] = "-".join([str(_) for _ in monitor_ids])
+            data["monitors"] = self.format_list(monitor_ids)
 
         result = self._post("getMonitors", **data).get("monitors")
         if result is None:
@@ -203,17 +225,17 @@ class UptimeRobot:
     def edit_monitor(self, monitor_id: int, new_data: AnyDict) -> bool:
         resp = self._post("editMonitor", id=monitor_id, **new_data)
 
-        return resp.get("monitor", {}).get("id") == monitor_id
+        return str(resp.get("monitor", {}).get("id")) == str(monitor_id)
 
     def delete_monitor(self, monitor_id: int) -> bool:
         resp = self._post("deleteMonitor", id=monitor_id)
 
-        return resp.get("monitor", {}).get("id") == monitor_id
+        return str(resp.get("monitor", {}).get("id")) == str(monitor_id)
 
     def reset_monitor(self, monitor_id: int) -> bool:
         resp = self._post("resetMonitor", id=monitor_id)
 
-        return resp.get("monitor", {}).get("id") == monitor_id
+        return str(resp.get("monitor", {}).get("id")) == str(monitor_id)
 
     # def get_alert_contacts(self):
     #     return self._post("getAlertContacts")
@@ -245,20 +267,22 @@ class UptimeRobot:
         return resp.get("psps")
 
     def get_psp(self, idx: str) -> UptimeRobotDashboard | None:
-        resp = self._post("getPSPs", psps=idx)
+        resp = self._post("getPSPs", psps=str(idx))
 
         psps = resp.get("psps")
 
         return psps[0] if psps else None
 
-    def new_psp(self, psp_data):
-        return self._post("newPSP", input_data=psp_data)
+    # def new_psp(self, psp_data):
+    #     return self._post("newPSP", input_data=psp_data)
 
-    def edit_psp(self, psp_id, new_data):
-        return self._post("editPSP", input_data={"psp_id": psp_id, "new_data": new_data})
+    def edit_psp(self, psp_id: str, monitors: list[str | int], **kwargs: typing.Any) -> bool:
+        data = {"id": psp_id, "monitors": self.format_list(monitors), **kwargs}
+        resp = self._post("editPSP", **data)
+        return str(resp.get("psp", {}).get("id")) == str(psp_id)
 
-    def delete_psp(self, psp_id):
-        return self._post("deletePSP", input_data={"psp_id": psp_id})
+    # def delete_psp(self, psp_id):
+    #     return self._post("deletePSP", input_data={"psp_id": psp_id})
 
     @staticmethod
     def format_status(status_code: int) -> str:
