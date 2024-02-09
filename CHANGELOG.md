@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.0 (2024-02-09)
+### Feature
+* Work in progress to add dashboards (PSPs) to the uptimerobot API ([`8b5c583`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/8b5c583383a356b6186d83edc0ff414897e6697a))
+
+### Fix
+* **auto-add:** Pre-select already added domains ([`8fa7b03`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/8fa7b03e54b51c92d1202fd50af3e768af59483b))
+
 ## v0.2.5 (2024-01-25)
 
 ### Fix
