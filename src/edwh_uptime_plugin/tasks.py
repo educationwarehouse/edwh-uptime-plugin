@@ -7,13 +7,40 @@ from pathlib import Path
 from typing import Optional
 
 import edwh
-from edwh.helpers import interactive_selected_checkbox_values
+from edwh.helpers import (
+    confirm,
+    interactive_selected_checkbox_values,
+    interactive_selected_radio_value,
+)
 from edwh.tasks import dc_config, get_hosts_for_service
 from invoke import Context, task
 from termcolor import cprint
 
 from .dumpers import DEFAULT_PLAINTEXT, DEFAULT_STRUCTURED, SUPPORTED_FORMATS, dumpers
+from .helpers import first
 from .uptimerobot import MonitorType, UptimeRobotMonitor, uptime_robot
+
+
+@task(iterable=("monitor_ids",))
+def auto_add_to_dashboard(ctx: Context, monitor_ids: list[str | int], dashboard_id: int | str = None):
+    """
+    Add some monitors to a dashboard.
+
+    Usually done via 'auto_add'.
+    """
+    if not dashboard_id:
+        # auto pick or ask:
+        dashboards = uptime_robot.get_psps()
+        dashboard_ids = {_["id"]: _["friendly_name"] for _ in dashboards}
+        if not dashboard_ids:
+            cprint("No dashboards available!", color="red", file=sys.stderr)
+            return
+        elif len(dashboard_ids) == 1:
+            dashboard_id = first(dashboard_ids)
+        else:
+            dashboard_id = interactive_selected_radio_value(dashboard_ids)
+
+    edit_dashboard(ctx, dashboard_id, add_monitors=monitor_ids)
 
 
 @task()
@@ -63,17 +90,30 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
             )
             return
 
-        for url in interactive_selected_checkbox_values(
+        to_add = interactive_selected_checkbox_values(
             list(domains),
             prompt="Which domains would you like to add to Uptime Robot? "
             "(use arrow keys, spacebar, or digit keys, press 'Enter' to finish):",
             selected=existing_domains,
-        ):
+        )
+
+
+        indices = []
+        for url in to_add:
             if url in existing_domains:
                 # no need to re-add!
                 continue
 
-            add(ctx, url)
+            if monitor_id := add(ctx, url):
+                indices.append(monitor_id)
+
+        if indices and confirm(
+            "Do you want to add this monitor to a dashboard? [Yn] "
+            if len(indices) == 1
+            else "Do you want to add these monitors to a dashboard? [Yn] ",
+            default=True,
+        ):
+            auto_add_to_dashboard(ctx, indices)
 
     # todo: Path(directory) / .env may be better, but `set_env_value` doesn't work with -H on remote servers at all yet
     edwh.set_env_value(Path(".env"), "UPTIME_AUTOADD_DONE", "1")
@@ -204,7 +244,7 @@ def normalize_url(url: str) -> tuple[str, str]:
 
 
 @task(aliases=("create",))
-def add(_: Context, url: str, friendly_name: str = "") -> None:
+def add(_: Context, url: str, friendly_name: str = "") -> int | None:
     """
     Create a new monitor.
     Requires a positional argument 'url' and an optional --friendly-name label
@@ -232,6 +272,8 @@ def add(_: Context, url: str, friendly_name: str = "") -> None:
         cprint("No monitor was added", color="red")
     else:
         cprint(f"Monitor '{friendly_name}' was added: {monitor_id}", color="green")
+
+    return monitor_id
 
 
 def select_monitor(url: str) -> UptimeRobotMonitor | None:
@@ -366,16 +408,39 @@ def dashboard(_: Context, dashboard_id: str, fmt: SUPPORTED_FORMATS = DEFAULT_ST
     dumpers[fmt](data)
 
 
-@task()
-def edit_dashboard(_: Context, dashboard_id: int):
+@task(iterable=("add_monitors",))
+def edit_dashboard(
+    _: Context, dashboard_id: int, friendly_name: str = None, add_monitors: typing.Iterable[int | str] = ()
+):
     dashboard_info = uptime_robot.get_psp(dashboard_id)
     if not dashboard_info:
         print("Invalid dashboard id.", file=sys.stderr)
         return
 
+    friendly_name = friendly_name or dashboard_info["friendly_name"]
+
     monitors = uptime_robot.get_monitors()
 
-    print(
-        [_["id"] for _ in monitors],
-        dashboard_info["monitors"],
+    available = {int(_["id"]): _["friendly_name"] for _ in monitors}
+    selected = dashboard_info["monitors"] + [int(_) for _ in add_monitors]
+
+    new_monitors = interactive_selected_checkbox_values(
+        available,
+        f"Which monitors should be shown on the dashboard '{friendly_name}'?",
+        selected=selected,
     )
+
+    if sorted(new_monitors) == sorted(dashboard_info["monitors"]):
+        cprint("List of monitors is the same as before, exiting.", color="yellow", file=sys.stderr)
+        return
+
+    dashboard_info["friendly_name"] = friendly_name
+    dashboard_info["monitors"] = new_monitors
+
+    if uptime_robot.edit_psp(
+        dashboard_id,
+        **dashboard_info,
+    ):
+        cprint(f"Dashboard {dashboard_info['friendly_name']} updated!", color="green")
+    else:
+        cprint(f"Dashboard {dashboard_info['friendly_name']} could not be updated.", color="red")

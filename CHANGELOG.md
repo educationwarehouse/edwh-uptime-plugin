@@ -2,12 +2,15 @@
 
 <!--next-version-placeholder-->
 
-## v0.3.0 (2024-02-09)
-### Feature
-* Work in progress to add dashboards (PSPs) to the uptimerobot API ([`8b5c583`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/8b5c583383a356b6186d83edc0ff414897e6697a))
-
+## v0.3.1 (2024-02-09)
 ### Fix
 * **auto-add:** Pre-select already added domains ([`8fa7b03`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/8fa7b03e54b51c92d1202fd50af3e768af59483b))
+
+
+## v0.3.0 (2024-02-02)
+### Feature
+* After auto-add, the user is queried to add these monitors to a public dashboard ([`da5eaa9`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/da5eaa9b59669fce7ef74bc1179393907abe1066))
+* Work in progress to add dashboards (PSPs) to the uptimerobot API ([`8b5c583`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/8b5c583383a356b6186d83edc0ff414897e6697a))
 
 ## v0.2.5 (2024-01-25)
 

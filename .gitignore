@@ -8,3 +8,5 @@ config.toml
 .coverage
 *.coverage
 coverage.*
+*.bak
+
