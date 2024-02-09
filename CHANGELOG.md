@@ -3,6 +3,9 @@
 <!--next-version-placeholder-->
 
 ## v0.3.1 (2024-02-09)
+
+
+## v0.3.1 (2024-02-09)
 ### Fix
 * **auto-add:** Pre-select already added domains ([`8fa7b03`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/8fa7b03e54b51c92d1202fd50af3e768af59483b))
 
