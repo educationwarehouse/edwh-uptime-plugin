@@ -43,6 +43,9 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
 
     directory = directory or "."
 
+    existing_monitors = uptime_robot.get_monitors()
+    existing_domains = {_["url"].split("/")[2] for _ in existing_monitors}
+
     with ctx.cd(directory):
         config = dc_config(ctx)
 
@@ -64,7 +67,12 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
             list(domains),
             prompt="Which domains would you like to add to Uptime Robot? "
             "(use arrow keys, spacebar, or digit keys, press 'Enter' to finish):",
+            selected=existing_domains,
         ):
+            if url in existing_domains:
+                # no need to re-add!
+                continue
+
             add(ctx, url)
 
     # todo: Path(directory) / .env may be better, but `set_env_value` doesn't work with -H on remote servers at all yet
