@@ -1,6 +1,7 @@
 """
 UptimeRobot API integration for the `edwh` tool.
 """
+
 import sys
 import typing
 from pathlib import Path
@@ -97,7 +98,6 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
             selected=existing_domains,
         )
 
-
         indices = []
         for url in to_add:
             if url in existing_domains:
@@ -108,9 +108,11 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
                 indices.append(monitor_id)
 
         if indices and confirm(
-            "Do you want to add this monitor to a dashboard? [Yn] "
-            if len(indices) == 1
-            else "Do you want to add these monitors to a dashboard? [Yn] ",
+            (
+                "Do you want to add this monitor to a dashboard? [Yn] "
+                if len(indices) == 1
+                else "Do you want to add these monitors to a dashboard? [Yn] "
+            ),
             default=True,
         ):
             auto_add_to_dashboard(ctx, indices)

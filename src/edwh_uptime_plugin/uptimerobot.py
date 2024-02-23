@@ -30,8 +30,7 @@ class UptimeRobotException(Exception):
         self.extra = extra
 
 
-class UptimeRobotRatelimit(UptimeRobotException):
-    ...
+class UptimeRobotRatelimit(UptimeRobotException): ...
 
 
 class UptimeRobotErrorResponse(typing.TypedDict):
@@ -307,5 +306,21 @@ class UptimeRobot:
         return colors.get(status_code, "grey")
 
 
-uptime_robot = UptimeRobot()
-uptime_robot.set_verbosity()
+class LazyUptimeRobot:
+    """
+    Allows 'uptime_robot' to be defined globally (so every task can use it),
+    but don't init at import time
+    (because then it could complain about missing docker-compose.yml before actually needing config)
+    """
+
+    def __init__(self):
+        self._instance = None
+
+    def __getattr__(self, item):
+        if self._instance is None:
+            self._instance = UptimeRobot()
+            self._instance.set_verbosity()  # uses 'edwh.get_env_value', which warns if dc.yml is missing
+        return getattr(self._instance, item)
+
+
+uptime_robot = typing.cast(UptimeRobot, LazyUptimeRobot())
