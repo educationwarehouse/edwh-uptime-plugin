@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.4 (2024-03-15)
+### Fix
+* Delayed init of UptimeRobot instance, since this depends on TomlConfig which is not always available ([`c73daee`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/c73daeed3ffec5766247795c1b97e44b84773e9b))
+
 ## v0.3.3 (2024-02-09)
 
 
