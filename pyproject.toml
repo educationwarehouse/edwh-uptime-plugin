@@ -27,6 +27,8 @@ dependencies = [
     'edwh>=0.38.0',
     'yayarl',
     'termcolor',
+    'tomli-w',
+    'typing-extensions',
 ]
 
 [project.optional-dependencies]
