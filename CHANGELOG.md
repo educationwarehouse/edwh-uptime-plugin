@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.6 (2024-04-15)
+
+### Fix
+
+* Set default of apikey to empty string instead of None ([`c46ed10`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/c46ed10a7bb1bb23eb71a224a463348d7b012c30))
+
 ## v0.3.5 (2024-04-09)
 
 ### Fix
