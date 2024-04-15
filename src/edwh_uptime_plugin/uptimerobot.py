@@ -117,7 +117,7 @@ class UptimeRobot:
         if not self._api_key:
             self._api_key = check_env(
                 "UPTIMEROBOT_APIKEY",
-                default=None,
+                default="",
                 comment="The API key used to manage UptimeRobot monitors.",
             )
 
