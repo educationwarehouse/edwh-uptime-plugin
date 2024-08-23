@@ -50,7 +50,7 @@ from edwh_uptime_plugin.uptimerobot import UptimeRobot, uptime_robot
 tasks.specific_task == specific_task
 
 # by default, the API key will be loaded from .env or prompted.
-uptime_robot._api_key = "specific-key"  # before any API calls to skip .env behavior
+uptime_robot.api_key = "specific-key"  # before any API calls to skip .env behavior
 
 # uptime_robot is an instance of UptimeRobot
 uptime_robot.get_account_details()

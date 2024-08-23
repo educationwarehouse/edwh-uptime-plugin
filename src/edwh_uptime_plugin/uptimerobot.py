@@ -123,6 +123,10 @@ class UptimeRobot:
 
         return self._api_key
 
+    @api_key.setter
+    def api_key(self, key: str) -> None:
+        self._api_key = key
+
     @property
     def has_api_key(self) -> bool:
         result = bool(self.api_key)
