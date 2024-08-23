@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.7 (2024-08-23)
+
+### Fix
+
+* Don't use `._api_key` externally, used property setter to make it easier (.api_key = 'abc') ([`b430995`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/b430995b3c34f7a842f5019728d0937ae18c2de9))
+
 ## v0.3.6 (2024-04-15)
 
 ### Fix
