@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.0 (2024-09-12)
+
+### Feature
+
+* Added 'maintenance' and 'unmaintenance' subcommands: ([`c444a3b`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/c444a3b577bec036df3c066acebf72e8c7f008d5))
+
 ## v0.3.7 (2024-08-23)
 
 ### Fix
