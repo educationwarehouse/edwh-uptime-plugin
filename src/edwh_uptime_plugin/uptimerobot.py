@@ -1,3 +1,4 @@
+import datetime as dt
 import enum
 import json
 import sys
@@ -64,6 +65,14 @@ class UptimeRobotDashboard(typing.TypedDict, total=False):
     custom_url: str
 
 
+class UptimeRobotMaintenanceWindow(typing.TypedDict, total=False):
+    id: int
+    type: str
+    duration: int
+    status: int
+    friendly_name: str
+
+
 class UptimeRobotResponse(typing.TypedDict, total=False):
     stat: typing.Literal["ok", "fail"]
     error: NotRequired[UptimeRobotErrorResponse]
@@ -76,6 +85,9 @@ class UptimeRobotResponse(typing.TypedDict, total=False):
 
     psp: NotRequired[UptimeRobotDashboard]
     psps: NotRequired[list[UptimeRobotDashboard]]
+
+    mwindow: NotRequired[UptimeRobotMaintenanceWindow]
+    mwindows: NotRequired[list[UptimeRobotMaintenanceWindow]]
 
 
 class UptimeRobotMonitor(typing.TypedDict, total=False):
@@ -255,14 +267,45 @@ class UptimeRobot:
     # def get_m_windows(self):
     #     return self._post("getMWindows")
     #
-    # def new_m_window(self, window_data):
-    #     return self._post("newMWindow", input_data=window_data)
+    def new_maintenance_window(self, friendly_name: str, start_time: dt.datetime, type: str | int, **window_data):
+        window_type = {
+            "once": 1,
+            "daily": 2,
+            "weekly": 3,
+            "montly": 4,
+        }.get(type, type)
+
+        resp = self._post(
+            "newMWindow",
+            friendly_name=friendly_name,
+            start_time=int(start_time.timestamp()) + 10,  # add some seconds buffer to ensure it's in the future
+            type=window_type,
+            **window_data,
+        )
+        return resp.get("mwindow", {}).get("id", 0)
+
     #
     # def edit_m_window(self, window_id, new_data):
     #     return self._post("editMWindow", input_data={"window_id": window_id, "new_data": new_data})
     #
-    # def delete_m_window(self, window_id):
-    #     return self._post("deleteMWindow", input_data={"window_id": window_id})
+
+    def delete_maintenance_window(self, window_id: int) -> bool:
+        resp = self._post("deleteMWindow", id=int(window_id))
+
+        return resp.get("stat", "") == "ok"
+
+    def clean_maintenance_windows(self) -> int:
+        removed = 0
+        for window in self._post("getMWindows").get("mwindows", []):
+            # you can't query on type directly so filter all non-once here:
+            if window["type"] != "once":
+                continue
+
+            self.delete_maintenance_window(window["id"])
+            removed += 1
+
+        return removed
+
     #
     def get_psps(self) -> list[UptimeRobotDashboard]:
         resp = self._post("getPSPs")

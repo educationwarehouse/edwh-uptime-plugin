@@ -2,8 +2,11 @@
 UptimeRobot API integration for the `edwh` tool.
 """
 
+import atexit
+import signal
 import sys
 import typing
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -446,3 +449,62 @@ def edit_dashboard(
         cprint(f"Dashboard {dashboard_info['friendly_name']} updated!", color="green")
     else:
         cprint(f"Dashboard {dashboard_info['friendly_name']} could not be updated.", color="red")
+
+
+def defer(callback: typing.Callable[[], None]):
+    """
+    When using atexit, you also have to listen to SIGTERM to ensure atexit runs.
+    This sigterm doesn't really have to do anything though!
+
+    Returns a function you can call to 'undefer'
+    """
+
+    atexit.register(callback)
+    signal.signal(signal.SIGTERM, lambda *_: exit())
+
+    return lambda: atexit.unregister(callback)
+
+
+@task
+def maintenance(_: Context, friendly_name: str, duration: int = 60):
+    """
+    Start a new maintenance window.
+
+    Args:
+        _: invoke Context
+        friendly_name: descriptive name for the window (e.g. the version you're releasing)
+        duration: time in minutes the window will stay if you don't end it manually
+    """
+    # 1. make window
+    window_id = uptime_robot.new_maintenance_window(
+        friendly_name, type="once", start_time=datetime.now(), duration=int(duration)
+    )
+
+    # 2. on kill/done remove window
+
+    def cleanup(*_):
+        cprint("Removing maintenance window", color="blue")
+        if uptime_robot.delete_maintenance_window(window_id):
+            cprint("Removed maintenance window!", color="green")
+        else:
+            cprint("Something went wrong removing the window...", color="red")
+
+    cancel = defer(cleanup)
+
+    # 3 wait for user to do maintenance
+    try:
+        input(
+            "Press enter to end the maintenance window. Press Ctrl-D to exit but keep the maintenance window open for the specified duration. "
+        )
+    except EOFError:
+        # ctrl-d pressed, keep window open:
+        cancel()
+        print("Not removing maintenance window")
+        exit(0)
+
+    # atexit/signal runs here
+
+
+@task
+def unmaintenance(_: Context):
+    print("Removed", uptime_robot.clean_maintenance_windows(), "one-time maintenance windows.")
