@@ -264,9 +264,9 @@ class UptimeRobot:
     # def delete_alert_contact(self, contact_id):
     #     return self._post("deleteAlertContact", input_data={"contact_id": contact_id})
     #
-    # def get_m_windows(self):
-    #     return self._post("getMWindows")
-    #
+    def get_m_windows(self):
+        return self._post("getMWindows")
+
     def new_maintenance_window(self, friendly_name: str, start_time: dt.datetime, type: str | int, **window_data):
         window_type = {
             "once": 1,

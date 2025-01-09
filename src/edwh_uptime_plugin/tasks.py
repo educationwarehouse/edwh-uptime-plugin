@@ -390,7 +390,9 @@ def reset(_: Context, url: str) -> None:
 @task()
 def account(_: Context, fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED) -> None:
     """
-    Show information about the acccount related to the current API key.
+    Show information about the account related to the current API key.
+
+    :param fmt: Output format (plaintext, json or yaml)
     """
     data = {"account": uptime_robot.get_account_details()}
     dumpers[fmt](data)
@@ -398,12 +400,23 @@ def account(_: Context, fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED) -> None:
 
 @task()
 def dashboards(_: Context, fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED):
+    """
+    Show all dashboards.
+
+    :param fmt: Output format (plaintext, json or yaml)
+    """
     data = {"dashboards": uptime_robot.get_psps()}
     dumpers[fmt](data)
 
 
 @task()
 def dashboard(_: Context, dashboard_id: str, fmt: SUPPORTED_FORMATS = DEFAULT_STRUCTURED):
+    """
+    Show a specific dashboard by dashboard_id.
+
+    :param dashboard_id: id of the dashboard you want to show.
+    :param fmt: Output format (plaintext, json or yaml)
+    """
     dashboard_info = uptime_robot.get_psp(dashboard_id)
     data = {"dashboard": dashboard_info}
     if dashboard_info:
@@ -417,6 +430,13 @@ def dashboard(_: Context, dashboard_id: str, fmt: SUPPORTED_FORMATS = DEFAULT_ST
 def edit_dashboard(
     _: Context, dashboard_id: int, friendly_name: str = None, add_monitors: typing.Iterable[int | str] = ()
 ):
+    """
+    Edit a dashboard.
+
+    :param dashboard_id: id of the dashboard you want to edit.
+    :param friendly_name: Human-readable label (defaults to part of URL)
+    :param add_monitors: id of the monitor you want to add to the dashboard.
+    """
     dashboard_info = uptime_robot.get_psp(dashboard_id)
     if not dashboard_info:
         print("Invalid dashboard id.", file=sys.stderr)
@@ -474,6 +494,9 @@ def maintenance(_: Context, friendly_name: str, duration: int = 60):
         _: invoke Context
         friendly_name: descriptive name for the window (e.g. the version you're releasing)
         duration: time in minutes the window will stay if you don't end it manually
+
+    usage:
+    ew uptime.maintenance <friendly_name> <duration>
     """
     # 1. make window
     window_id = uptime_robot.new_maintenance_window(
@@ -504,7 +527,47 @@ def maintenance(_: Context, friendly_name: str, duration: int = 60):
 
     # atexit/signal runs here
 
+@task
+def get_maintenance(_: Context):
+    """Show all maintenance windows."""
+    print("Active maintenance windows:", uptime_robot.get_m_windows())
 
 @task
-def unmaintenance(_: Context):
-    print("Removed", uptime_robot.clean_maintenance_windows(), "one-time maintenance windows.")
+def unmaintenance(_: Context, window: int | str):
+    """
+    Remove a specific maintenance window by friendly_name or window_id.
+
+    :param window: window_id or friendly_name of the maintenance window you want to remove.
+
+    usage:
+    ew uptime.unmaintenance <friendly_name>
+    or: ew uptime.unmaintenance <window_id>
+    """
+    window_data = uptime_robot.get_m_windows()  # Get all maintenance windows.
+    if window_data["mwindows"]: # Is the list in "mwindows" is truthy / not empty
+        for active_maintenance_window in window_data.get("mwindows"): # loop through the active maintenance windows in window_data windows.
+            try:
+                window_id = int(window)  # If the window is castable into an int it is A window_id
+                if active_maintenance_window["id"] == window_id:  # If the friendly name in the maintenance window is the same as the name provided.
+                    removal_status = uptime_robot.delete_maintenance_window(window_id=window_id)  # Remove the specified maintenance window by id.
+                    print("Removed", window) if removal_status else print("removal of", window, "failed")
+                else:
+                    print("Maintenance window not removed, '" + window + "' could not be found.")
+            except ValueError:
+                if active_maintenance_window["friendly_name"] == window:  # If the friendly name in the maintenance window is the same as the name provided.
+                    removal_status = uptime_robot.delete_maintenance_window(window_id=active_maintenance_window["id"])
+                    print("Removed", window) if removal_status else print("removal of", window, "failed")
+                else:
+                    print("Maintenance window not removed, '" + window + "' could not be found.")
+    else:
+        print("No active maintenance windows found.")
+
+@task
+def unmaintenance_all(_: Context):
+    """Remove all maintenance windows."""
+    yes_set = {"y", "yes", "Y"}
+    verification = input("This will remove all maintenance windows. Are you sure? (y/N)")
+    print("Removed", uptime_robot.clean_maintenance_windows(), "one-time maintenance windows.")\
+        if verification in yes_set else print("Removal aborted.")
+
+
