@@ -550,13 +550,13 @@ def unmaintenance(_: Context, window: int | str):
                 window_id = int(window)  # If the window is castable into an int window is A window_id
                 if active_maintenance_window["id"] == window_id:  # If the id matches the user input.
                     removal_status = uptime_robot.delete_maintenance_window(window_id=window_id)  # Window removal.
-                    print("Removed", window) if removal_status else print("removal of", window, "failed")
+                    print("Removed", window) if removal_status else print("Removal of", window, "failed.")
                 else:
                     print("Maintenance window not removed, '" + window + "' could not be found.")
             except ValueError:
                 if active_maintenance_window["friendly_name"] == window:  # If the friendly name matches the user input.
                     removal_status = uptime_robot.delete_maintenance_window(window_id=active_maintenance_window["id"])
-                    print("Removed", window) if removal_status else print("removal of", window, "failed")
+                    print("Removed", window) if removal_status else print("Removal of '" + window + "' failed.")
                 else:
                     print("Maintenance window not removed, '" + window + "' could not be found.")
     else:
