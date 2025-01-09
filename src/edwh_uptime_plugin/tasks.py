@@ -196,8 +196,8 @@ def list_statuses(_: Context, search: str = "", fmt: SUPPORTED_FORMATS = DEFAULT
     output_statuses(monitors, fmt)
 
 
-@task()
-def up(_: Context, strict: bool = False, fmt: SUPPORTED_FORMATS = DEFAULT_PLAINTEXT) -> None:
+@task(aliases=("up",))
+def list_up(_: Context, strict: bool = False, fmt: SUPPORTED_FORMATS = DEFAULT_PLAINTEXT) -> None:
     """
     List monitors that are up (probably).
 
@@ -213,8 +213,8 @@ def up(_: Context, strict: bool = False, fmt: SUPPORTED_FORMATS = DEFAULT_PLAINT
     output_statuses(monitors, fmt)
 
 
-@task()
-def down(_: Context, strict: bool = False, fmt: SUPPORTED_FORMATS = DEFAULT_PLAINTEXT) -> None:
+@task(aliases=("down",))
+def list_down(_: Context, strict: bool = False, fmt: SUPPORTED_FORMATS = DEFAULT_PLAINTEXT) -> None:
     """
     List monitors that are down (probably).
 
