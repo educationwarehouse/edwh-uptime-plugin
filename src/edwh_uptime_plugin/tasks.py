@@ -565,8 +565,8 @@ def unmaintenance(_: Context, window: int | str):
 @task
 def unmaintenance_all(_: Context):
     """Remove all maintenance windows."""
-    yes_set = {"y", "yes", "Y"}
-    verification = input("This will remove all maintenance windows. Are you sure? (y/N)")
+    yes_set = {"y", "yes"}
+    verification = input("This will remove all maintenance windows. Are you sure? (y/N)").lower()
     print("Removed", uptime_robot.clean_maintenance_windows(), "one-time maintenance windows.")\
         if verification in yes_set else print("Removal aborted.")
 
