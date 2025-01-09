@@ -544,17 +544,17 @@ def unmaintenance(_: Context, window: int | str):
     or: ew uptime.unmaintenance <window_id>
     """
     window_data = uptime_robot.get_m_windows()  # Get all maintenance windows.
-    if window_data["mwindows"]: # Is the list in "mwindows" is truthy / not empty
-        for active_maintenance_window in window_data.get("mwindows"): # loop through the active maintenance windows in window_data windows.
+    if window_data["mwindows"]: # Is the list in "mwindows" truthy / not empty
+        for active_maintenance_window in window_data.get("mwindows"): # loop through the active maintenance windows in window_data.
             try:
-                window_id = int(window)  # If the window is castable into an int it is A window_id
-                if active_maintenance_window["id"] == window_id:  # If the friendly name in the maintenance window is the same as the name provided.
-                    removal_status = uptime_robot.delete_maintenance_window(window_id=window_id)  # Remove the specified maintenance window by id.
+                window_id = int(window)  # If the window is castable into an int window is A window_id
+                if active_maintenance_window["id"] == window_id:  # If the id matches the user input.
+                    removal_status = uptime_robot.delete_maintenance_window(window_id=window_id)  # Window removal.
                     print("Removed", window) if removal_status else print("removal of", window, "failed")
                 else:
                     print("Maintenance window not removed, '" + window + "' could not be found.")
             except ValueError:
-                if active_maintenance_window["friendly_name"] == window:  # If the friendly name in the maintenance window is the same as the name provided.
+                if active_maintenance_window["friendly_name"] == window:  # If the friendly name matches the user input.
                     removal_status = uptime_robot.delete_maintenance_window(window_id=active_maintenance_window["id"])
                     print("Removed", window) if removal_status else print("removal of", window, "failed")
                 else:
