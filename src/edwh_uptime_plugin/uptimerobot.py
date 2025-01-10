@@ -264,8 +264,22 @@ class UptimeRobot:
     # def delete_alert_contact(self, contact_id):
     #     return self._post("deleteAlertContact", input_data={"contact_id": contact_id})
     #
-    def get_m_windows(self):
-        return self._post("getMWindows")
+    def get_m_windows(self, mwindow_id: typing.Iterable[str | int] = ()):
+        data = {}
+        if mwindow_id:
+            data["mwindows"] = self.format_list(mwindow_id)
+
+        result = self._post("getMWindows", **data).get("mwindows")
+        if result is None:
+            return []
+
+        return result
+
+    def get_m_window(self, mwindow_id) -> Optional[UptimeRobotMaintenanceWindow]:
+        if mwindows := self.get_m_windows(mwindow_id=[mwindow_id]):
+            return mwindows[0]
+
+        return None
 
     def new_maintenance_window(self, friendly_name: str, start_time: dt.datetime, type: str | int, **window_data):
         window_type = {
@@ -284,10 +298,8 @@ class UptimeRobot:
         )
         return resp.get("mwindow", {}).get("id", 0)
 
-    #
-    # def edit_m_window(self, window_id, new_data):
-    #     return self._post("editMWindow", input_data={"window_id": window_id, "new_data": new_data})
-    #
+    def edit_m_window(self,new_data):
+        return self._post("editMWindow", **new_data)
 
     def delete_maintenance_window(self, window_id: int) -> bool:
         resp = self._post("deleteMWindow", id=int(window_id))
@@ -306,7 +318,6 @@ class UptimeRobot:
 
         return removed
 
-    #
     def get_psps(self) -> list[UptimeRobotDashboard]:
         resp = self._post("getPSPs")
 

@@ -431,11 +431,12 @@ def edit_dashboard(
     _: Context, dashboard_id: int, friendly_name: str = None, add_monitors: typing.Iterable[int | str] = ()
 ):
     """
-    Edit a dashboard.
+    Select monitors to add to A dashboard.
+
+    Usage: ew uptime.edit_dashboard <dashboard_id>
 
     :param dashboard_id: id of the dashboard you want to edit.
     :param friendly_name: Human-readable label (defaults to part of URL)
-    :param add_monitors: id of the monitor you want to add to the dashboard.
     """
     dashboard_info = uptime_robot.get_psp(dashboard_id)
     if not dashboard_info:
@@ -528,9 +529,126 @@ def maintenance(_: Context, friendly_name: str, duration: int = 60):
     # atexit/signal runs here
 
 @task
-def get_maintenance(_: Context):
+def maintenances(_: Context):
     """Show all maintenance windows."""
     print("Active maintenance windows:", uptime_robot.get_m_windows())
+
+@task
+def add_monitor_to_maintenance(_: Context, maintenance_id: int, monitor_id: int):
+    """
+    Add A monitor to A maintenance window.
+
+    :param maintenance_id: ID of the maintenance window to add the monitor to.
+    :param monitor_id: ID of the monitor to add to the maintenance window.
+    """
+    # Get monitor data.
+    monitor_data = uptime_robot.get_monitor(monitor_id=monitor_id)
+    if not monitor_data:
+        print(maintenance_id, " is not an valid maintenance_id.")
+        return
+
+    # Get maintenance window data.
+    m_window_data = uptime_robot.get_m_window(int(maintenance_id))
+    if not m_window_data:
+        print("Edit Failed. No available maintenance windows.")
+        return
+
+    # Set the monitor data
+    m_window_ids = {str(maintenance_id)} # TODO: een monitor heeft op deze manier maximaal 1 maintenance window, de rest kan momenteel niet opgehaald worden.
+    m_window_ids_str = "-".join(m_window_ids) # Join the m_window_ids set by "-"
+    monitor_data["mwindows"] = m_window_ids_str
+
+    # Remove the monitor id so it does not raise errors later.
+    del monitor_data["id"]
+    edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
+    if edit_status:
+        print("Succesfully added", monitor_id, "to", maintenance_id) # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+    else:
+        print("Failed")
+
+def add_dashboard_monitors_to_maintenance(_: Context, maintenance_id: int, dashboard_id: int):
+    """
+    Add all monitor in a dashboard to A maintenance window.
+
+    :param maintenance_id: ID of the maintenance window to add the monitor to.
+    :param monitor_id: ID of the monitor to add to the maintenance window.
+    """
+    # Get monitor data.
+    dashboard_data = uptime_robot.get_psp(idx=dashboard_id)
+    if not dashboard_data:
+        print(dashboard_data, " is not an valid dashboard_id.")
+        return
+
+    # Get maintenance window data.
+    m_window_data = uptime_robot.get_m_window(int(maintenance_id))
+    if not m_window_data:
+        print("Edit Failed. No available maintenance windows.")
+        return
+
+    print(dashboard_data)
+    # Remove the monitor id so it does not raise errors later.
+    # del monitor_data["id"]
+    # edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
+    # if edit_status:
+    #     print("Succesfully added", monitor_id, "to", maintenance_id) # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+    # else:
+    #     print("Failed")
+
+@task
+def remove_monitor_from_maintenance(_: Context, maintenance_id: int, monitor_id: int):
+    """
+    Remove A monitor from A maintenance window.
+
+    :param maintenance_id: ID of the maintenance window to add the monitor to.
+    :param monitor_id: ID of the monitor to add to the maintenance window.
+    """
+    # Get monitor data.
+    monitor_data = uptime_robot.get_monitor(monitor_id=monitor_id)
+    if not monitor_data:
+        return print(monitor_id, "is not a valid monitor_id")
+
+    # Get maintenance window data.
+    m_window_data = uptime_robot.get_m_window(mwindow_id=maintenance_id)
+    if not m_window_data:
+        return print("Edit Failed. No available maintenance windows.")
+
+    # Remove the mwindow from the monitor
+    print(f"{monitor_data = }")
+    print(f"{m_window_data = }")
+    monitor_mwindows = monitor_data.get("mwindows")
+    if not monitor_mwindows:
+        print("monitor window and monitor are already not linked.")
+
+
+    edit_status = uptime_robot.edit_monitor(monitor_id, new_data=monitor_data)
+    if edit_status:
+        print("Succesfully removed all monitors from", maintenance_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+
+@task
+def remove_all_monitors_from_maintenance(_: Context, maintenance_id: int, monitor_id: int):
+    """
+    Remove all monitors from A maintenance window.
+
+    :param maintenance_id: ID of the maintenance window to add the monitor to.
+    :param monitor_id: ID of the monitor to add to the maintenance window.
+    """
+    # Get monitor data.
+    monitor_data = uptime_robot.get_monitor(monitor_id=monitor_id)
+    if not monitor_data:
+        print(monitor_id, "is not a valid monitor_id")
+        return
+
+    # Get maintenance window data.
+    m_window_data = uptime_robot.get_m_window()
+    if not m_window_data:
+        print(maintenance_id, " is not an valid maintenance_id.")
+        return
+
+    # Remove the monitor data
+    monitor_data["mwindows"] = ()
+    edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
+    if edit_status:
+        print("Succesfully removed all monitors from", maintenance_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
 
 @task
 def unmaintenance(_: Context, window: int | str):
@@ -543,31 +661,88 @@ def unmaintenance(_: Context, window: int | str):
     ew uptime.unmaintenance <friendly_name>
     or: ew uptime.unmaintenance <window_id>
     """
+    def removal_status_print(status):
+        if status:
+            print("Removed", window)
+        else:
+            print("Removal of", window, "failed.")
+
     window_data = uptime_robot.get_m_windows()  # Get all maintenance windows.
-    if window_data["mwindows"]: # Is the list in "mwindows" truthy / not empty
-        for active_maintenance_window in window_data.get("mwindows"): # loop through the active maintenance windows in window_data.
-            try:
-                window_id = int(window)  # If the window is castable into an int window is A window_id
-                if active_maintenance_window["id"] == window_id:  # If the id matches the user input.
-                    removal_status = uptime_robot.delete_maintenance_window(window_id=window_id)  # Window removal.
-                    print("Removed", window) if removal_status else print("Removal of", window, "failed.")
-                else:
-                    print("Maintenance window not removed, '" + window + "' could not be found.")
-            except ValueError:
-                if active_maintenance_window["friendly_name"] == window:  # If the friendly name matches the user input.
-                    removal_status = uptime_robot.delete_maintenance_window(window_id=active_maintenance_window["id"])
-                    print("Removed", window) if removal_status else print("Removal of '" + window + "' failed.")
-                else:
-                    print("Maintenance window not removed, '" + window + "' could not be found.")
-    else:
+
+    if not window_data:
         print("No active maintenance windows found.")
+        return
+
+    for active_maintenance_window in window_data: # loop through the active maintenance windows in window_data.
+        try:
+            window_id = int(window)  # If the window is castable into an int window is A window_id
+            if active_maintenance_window["id"] == window_id:  # If the id matches the user input.
+                removal_status = uptime_robot.delete_maintenance_window(window_id=window_id)  # Window removal.
+                removal_status_print(removal_status)
+            else:
+                print("Maintenance window not removed, '" + window + "' could not be found.")
+        except ValueError:
+            if active_maintenance_window["friendly_name"] == window:  # If the friendly name matches the user input.
+                removal_status = uptime_robot.delete_maintenance_window(window_id=active_maintenance_window["id"])
+                removal_status_print(removal_status)
+            else:
+                print("Maintenance window not removed, '" + window + "' could not be found.")
+
 
 @task
 def unmaintenance_all(_: Context):
     """Remove all maintenance windows."""
-    yes_set = {"y", "yes"}
-    verification = input("This will remove all maintenance windows. Are you sure? (y/N)").lower()
-    print("Removed", uptime_robot.clean_maintenance_windows(), "one-time maintenance windows.")\
-        if verification in yes_set else print("Removal aborted.")
+    verification = confirm("This will remove all maintenance windows. Are you sure? (y/N)")
+    if verification:
+        print("Removed", uptime_robot.clean_maintenance_windows(), "one-time maintenance windows.")
+    else:
+        print("Removal aborted.")
 
+@task
+def toggle_maintenance(_: Context, mwindow_id: int, status:int = None):
+    """
+    Activate or deactivate a maintenance window.
+
+    Usage: ew uptime.toggle-maintenance <mwindow_id>\n
+    Or: ew uptime.toggle-maintenance <mwindow_id> --status <0 or 1>
+
+    :param mwindow_id: id of te maintenance window to activate.
+    :param status: Optional, status to change the maintenance window to.
+     If not provided status will switch.
+    """
+    def pauze_maintenance():
+        window_data["status"] = 0
+        window_data["start_time"] = 32504504418
+        edit_status = uptime_robot.edit_m_window(new_data=window_data)
+        if edit_status:
+            return print("Deactivated:", mwindow_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+
+    def activate_maintenance():
+        window_data["status"] = 1
+        window_data["start_time"] = int(datetime.now().timestamp())
+        edit_status = uptime_robot.edit_m_window(new_data=window_data)
+        if edit_status:
+            return print("Activated:", mwindow_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+
+    # Get window data
+    window_data = uptime_robot.get_m_window(mwindow_id)
+    if not window_data:
+        return print("No active maintenance windows found.")
+
+    match status:
+        case "0":
+            if window_data.get("status") == 0:
+                return print("Maintenance window already pauzed.")
+            else:
+                return pauze_maintenance()
+        case "1":
+            if window_data.get("status") == 1:
+                return print("Maintenance window already active.")
+            else:
+                return activate_maintenance()
+        case _:
+            if window_data.get("status") == 0:
+                return activate_maintenance()
+            else:
+                return pauze_maintenance()
 
