@@ -708,21 +708,21 @@ def toggle_maintenance(_: Context, mwindow_id: int, status:int = None):
 
     :param mwindow_id: id of te maintenance window to activate.
     :param status: Optional, status to change the maintenance window to.
-     If not provided status will switch.
+     If not provided status will switch where 0 is paused and 1 is active.
     """
     def pauze_maintenance():
         window_data["status"] = 0
         window_data["start_time"] = 32504504418
         edit_status = uptime_robot.edit_m_window(new_data=window_data)
         if edit_status:
-            return print("Deactivated:", mwindow_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+            return print("Deactivated:", mwindow_id)
 
     def activate_maintenance():
         window_data["status"] = 1
-        window_data["start_time"] = int(datetime.now().timestamp())
+        window_data["start_time"] = int(datetime.now().timestamp()) + 1 # Sometimes activating the window gives an error where the passed value is one second too late for the api therefore +1 sec
         edit_status = uptime_robot.edit_m_window(new_data=window_data)
         if edit_status:
-            return print("Activated:", mwindow_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+            return print("Activated:", mwindow_id)
 
     # Get window data
     window_data = uptime_robot.get_m_window(mwindow_id)
