@@ -542,7 +542,7 @@ def add_monitor_to_maintenance(_: Context, maintenance_id: int, monitor_id: int)
     :param monitor_id: ID of the monitor to add to the maintenance window.
     """
     # Get monitor data.
-    monitor_data = uptime_robot.get_monitor(monitor_id=monitor_id)
+    monitor_data = uptime_robot.get_monitor(monitor_id=monitor_id, mwindows=1)
     if not monitor_data:
         print(maintenance_id, " is not an valid maintenance_id.")
         return
@@ -566,6 +566,7 @@ def add_monitor_to_maintenance(_: Context, maintenance_id: int, monitor_id: int)
     else:
         print("Failed")
 
+@task
 def add_dashboard_monitors_to_maintenance(_: Context, maintenance_id: int, dashboard_id: int):
     """
     Add all monitor in a dashboard to A maintenance window.
@@ -573,7 +574,7 @@ def add_dashboard_monitors_to_maintenance(_: Context, maintenance_id: int, dashb
     :param maintenance_id: ID of the maintenance window to add the monitor to.
     :param monitor_id: ID of the monitor to add to the maintenance window.
     """
-    # Get monitor data.
+    # Get dashboard data.
     dashboard_data = uptime_robot.get_psp(idx=dashboard_id)
     if not dashboard_data:
         print(dashboard_data, " is not an valid dashboard_id.")
@@ -585,14 +586,33 @@ def add_dashboard_monitors_to_maintenance(_: Context, maintenance_id: int, dashb
         print("Edit Failed. No available maintenance windows.")
         return
 
-    print(dashboard_data)
-    # Remove the monitor id so it does not raise errors later.
-    # del monitor_data["id"]
-    # edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
-    # if edit_status:
-    #     print("Succesfully added", monitor_id, "to", maintenance_id) # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
-    # else:
-    #     print("Failed")
+    # Search for the monitors in a dashboard and add the maintenance window_id to them
+    dashboard_monitors = dashboard_data.get("monitors", [])
+
+    for monitor_id in dashboard_monitors:
+        # Get the monitor data
+        current_monitor = uptime_robot.get_monitor(monitor_id=monitor_id, mwindows=1)
+
+        # Make a mwindow_ids list and add the monitor_id to it.
+        mwindow_ids = {str(maintenance_id)}
+
+        # Get the maintenance id's of the monitor
+        monitor_m_window_list = current_monitor["mwindows"]
+        for mwindow_data in monitor_m_window_list:
+            mwindow_ids.add(str(mwindow_data["id"]))
+
+        # Add the mwindow id's to a xxxx-xxxx-xxxx format
+        m_window_ids_str = "-".join(mwindow_ids)  # Join the m_window_ids set by "-"
+
+        # Add the m_window_ids_str to the monitor
+        current_monitor["mwindows"] = m_window_ids_str
+        del current_monitor["id"] # Delete the id. Otherwise, it is sent double.
+        edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=current_monitor)
+        if edit_status:
+            print("Succesfully added", monitor_id, "to", maintenance_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+        else:
+            print("Failed")
+
 
 @task
 def remove_monitor_from_maintenance(_: Context, maintenance_id: int, monitor_id: int):
@@ -643,6 +663,8 @@ def remove_all_monitors_from_maintenance(_: Context, maintenance_id: int, monito
     if not m_window_data:
         print(maintenance_id, " is not an valid maintenance_id.")
         return
+
+    # Search monitors to compare mwindow_id's
 
     # Remove the monitor data
     monitor_data["mwindows"] = ()
