@@ -553,13 +553,17 @@ def add_monitor_to_maintenance(_: Context, maintenance_id: int, monitor_id: int)
         print("Edit Failed. No available maintenance windows.")
         return
 
-    # Set the monitor data
-    m_window_ids = {str(maintenance_id)} # TODO: een monitor heeft op deze manier maximaal 1 maintenance window, de rest kan momenteel niet opgehaald worden.
-    m_window_ids_str = "-".join(m_window_ids) # Join the m_window_ids set by "-"
-    monitor_data["mwindows"] = m_window_ids_str
+    # Get the mwindows from monitor data.
+    mwindow_ids = {str(maintenance_id)}
+    mwindows = monitor_data["mwindows"]
+    for mwindow in mwindows:
+        mwindow_ids.add(str(mwindow["id"]))
+    # Edit the mwindow_ids to A id-id-id format
+    m_window_ids_str = "-".join(mwindow_ids) # Join the mwindow_ids set by "-"
 
-    # Remove the monitor id so it does not raise errors later.
-    del monitor_data["id"]
+    # Edit the monitor.
+    monitor_data["mwindows"] = m_window_ids_str
+    del monitor_data["id"] # Remove the monitor id so it does not raise errors later.
     edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
     if edit_status:
         print("Succesfully added", monitor_id, "to", maintenance_id) # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
