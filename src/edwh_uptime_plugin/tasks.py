@@ -565,6 +565,7 @@ def maintenance(_: Context, friendly_name: str, duration: int = 60, dashboard_id
         # ctrl-d pressed, keep window open:
         cancel()
         print("Not removing maintenance window")
+        print(f"To remove the maintenance window use: ew uptime.unmaintenance {window_id}")
         exit(0)
 
     # atexit/signal runs here
@@ -712,8 +713,17 @@ def unmaintenance(_: Context, window: int | str):
     ew uptime.unmaintenance <friendly_name>
     or: ew uptime.unmaintenance <window_id>
     """
-    def removal_status_print(status):
-        if status:
+    def remove_maintenance_window(window_id : int):
+        m_window = uptime_robot.get_m_window(window_id)
+        # Pause the mwindow if it is not already paused
+        if m_window["status"] != 0:
+            m_window["status"] = 0
+            m_window["start_time"] = 32504504418
+            uptime_robot.edit_m_window(new_data=m_window)
+        # Remove the window
+        removal_status = uptime_robot.delete_maintenance_window(window_id=window_id)  # Window removal.
+        # Print if the status was successful
+        if removal_status:
             print("Removed", window)
         else:
             print("Removal of", window, "failed.")
@@ -728,14 +738,15 @@ def unmaintenance(_: Context, window: int | str):
         try:
             window_id = int(window)  # If the window is castable into an int window is A window_id
             if active_maintenance_window["id"] == window_id:  # If the id matches the user input.
-                removal_status = uptime_robot.delete_maintenance_window(window_id=window_id)  # Window removal.
-                removal_status_print(removal_status)
+                remove_maintenance_window(window_id)
+                return
 
         except ValueError:
             if active_maintenance_window["friendly_name"] == window:  # If the friendly name matches the user input.
-                removal_status = uptime_robot.delete_maintenance_window(window_id=active_maintenance_window["id"])
-                removal_status_print(removal_status)
+                remove_maintenance_window(active_maintenance_window["id"])
+                return
 
+    print(f"No maintenance window {window} found.")
 
 @task
 def unmaintenance_all(_: Context):
@@ -775,7 +786,7 @@ def toggle_maintenance(_: Context, mwindow_id: int, status:int = None):
     # Get window data
     window_data = uptime_robot.get_m_window(mwindow_id)
     if not window_data:
-        return print("No active maintenance windows found.")
+        return print(f"No maintenance window {mwindow_id} found.")
 
     match status:
         case "0":
