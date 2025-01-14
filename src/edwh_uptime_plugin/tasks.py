@@ -514,8 +514,6 @@ def maintenance(_: Context, friendly_name: str, duration: int = 60, dashboard_id
         if not dashboard_ids:
             cprint("No dashboards available!", color="red", file=sys.stderr)
             return
-        elif len(dashboard_ids) == 1:
-            dashboard_id = first(dashboard_ids)
         else:
             dashboard_id = interactive_selected_radio_value(
                 dashboard_ids, allow_empty=True,
