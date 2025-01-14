@@ -631,7 +631,7 @@ def remove_monitor_from_maintenance(_: Context, maintenance_id: int, monitor_id:
     monitor_data = uptime_robot.get_monitor(monitor_id=monitor_id, mwindows=1)
     if not monitor_data:
         return print(monitor_id, "is not a valid monitor_id")
-    print("Before changes", monitor_data)
+
     # Get maintenance window data.
     m_window_data = uptime_robot.get_m_window(mwindow_id=maintenance_id)
     if not m_window_data:
@@ -653,7 +653,7 @@ def remove_monitor_from_maintenance(_: Context, maintenance_id: int, monitor_id:
     # Remove the mwindow from the monitor
     monitor_data["mwindows"] = m_window_ids_str
     del monitor_data["id"]  # Delete the id. Otherwise, it is sent double.
-    print("After changes", monitor_data)
+
     edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
     if edit_status:
         print("Succesfully removed", monitor_id , "from", maintenance_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
