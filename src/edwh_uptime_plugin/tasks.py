@@ -622,59 +622,43 @@ def add_dashboard_monitors_to_maintenance(_: Context, maintenance_id: int, dashb
 def remove_monitor_from_maintenance(_: Context, maintenance_id: int, monitor_id: int):
     """
     Remove A monitor from A maintenance window.
+    note: Can not remove the last maintenance window from a monitor. (api does not support this)
 
     :param maintenance_id: ID of the maintenance window to add the monitor to.
     :param monitor_id: ID of the monitor to add to the maintenance window.
     """
     # Get monitor data.
-    monitor_data = uptime_robot.get_monitor(monitor_id=monitor_id)
+    monitor_data = uptime_robot.get_monitor(monitor_id=monitor_id, mwindows=1)
     if not monitor_data:
         return print(monitor_id, "is not a valid monitor_id")
-
+    print("Before changes", monitor_data)
     # Get maintenance window data.
     m_window_data = uptime_robot.get_m_window(mwindow_id=maintenance_id)
     if not m_window_data:
         return print("Edit Failed. No available maintenance windows.")
 
-    # Remove the mwindow from the monitor
-    print(f"{monitor_data = }")
-    print(f"{m_window_data = }")
+    # Get the monitor windows the monitor is linked to and add them to a list.
     monitor_mwindows = monitor_data.get("mwindows")
+
     if not monitor_mwindows:
-        print("monitor window and monitor are already not linked.")
+        return print("monitor window and monitor are already not linked.")
 
+    m_window_ids = list()
+    for mwindow in monitor_mwindows:
+        if int(mwindow["id"]) != int(maintenance_id):
+            m_window_ids.append(str(mwindow["id"]))
+    # Format the m_window_ids to a xxxx-xxxx-xxxx format
+    m_window_ids_str = "-".join(m_window_ids)  # Join the m_window_ids set by "-"
 
-    edit_status = uptime_robot.edit_monitor(monitor_id, new_data=monitor_data)
-    if edit_status:
-        print("Succesfully removed all monitors from", maintenance_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
-
-@task
-def remove_all_monitors_from_maintenance(_: Context, maintenance_id: int, monitor_id: int):
-    """
-    Remove all monitors from A maintenance window.
-
-    :param maintenance_id: ID of the maintenance window to add the monitor to.
-    :param monitor_id: ID of the monitor to add to the maintenance window.
-    """
-    # Get monitor data.
-    monitor_data = uptime_robot.get_monitor(monitor_id=monitor_id)
-    if not monitor_data:
-        print(monitor_id, "is not a valid monitor_id")
-        return
-
-    # Get maintenance window data.
-    m_window_data = uptime_robot.get_m_window()
-    if not m_window_data:
-        print(maintenance_id, " is not an valid maintenance_id.")
-        return
-
-    # Search monitors to compare mwindow_id's
-
-    # Remove the monitor data
-    monitor_data["mwindows"] = ()
+    # Remove the mwindow from the monitor
+    monitor_data["mwindows"] = m_window_ids_str
+    del monitor_data["id"]  # Delete the id. Otherwise, it is sent double.
+    print("After changes", monitor_data)
     edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
     if edit_status:
-        print("Succesfully removed all monitors from", maintenance_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+        print("Succesfully removed", monitor_id , "from", maintenance_id)  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+    else:
+        print("Failed")
 
 @task
 def unmaintenance(_: Context, window: int | str):
@@ -713,7 +697,6 @@ def unmaintenance(_: Context, window: int | str):
                 removal_status_print(removal_status)
             else:
                 print("Maintenance window not removed, '" + window + "' could not be found.")
-
 
 @task
 def unmaintenance_all(_: Context):
@@ -771,4 +754,3 @@ def toggle_maintenance(_: Context, mwindow_id: int, status:int = None):
                 return activate_maintenance()
             else:
                 return pauze_maintenance()
-
