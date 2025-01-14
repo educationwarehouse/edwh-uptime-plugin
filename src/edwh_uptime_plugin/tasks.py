@@ -724,14 +724,14 @@ def toggle_maintenance(_: Context, mwindow_id: int, status:int = None):
         window_data["start_time"] = 32504504418
         edit_status = uptime_robot.edit_m_window(new_data=window_data)
         if edit_status:
-            return print("Deactivated:", mwindow_id)
+            return cprint(f"Paused: {mwindow_id}", color="yellow")
 
     def activate_maintenance():
         window_data["status"] = 1
         window_data["start_time"] = int(datetime.now().timestamp()) + 1 # Sometimes activating the window gives an error where the passed value is one second too late for the api therefore +1 sec
         edit_status = uptime_robot.edit_m_window(new_data=window_data)
         if edit_status:
-            return print("Activated:", mwindow_id)
+            return cprint(f"Activated: {mwindow_id}", color="green")
 
     # Get window data
     window_data = uptime_robot.get_m_window(mwindow_id)
