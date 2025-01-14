@@ -732,14 +732,12 @@ def unmaintenance(_: Context, window: int | str):
             if active_maintenance_window["id"] == window_id:  # If the id matches the user input.
                 removal_status = uptime_robot.delete_maintenance_window(window_id=window_id)  # Window removal.
                 removal_status_print(removal_status)
-            else:
-                print("Maintenance window not removed, '" + window + "' could not be found.")
+
         except ValueError:
             if active_maintenance_window["friendly_name"] == window:  # If the friendly name matches the user input.
                 removal_status = uptime_robot.delete_maintenance_window(window_id=active_maintenance_window["id"])
                 removal_status_print(removal_status)
-            else:
-                print("Maintenance window not removed, '" + window + "' could not be found.")
+
 
 @task
 def unmaintenance_all(_: Context):
