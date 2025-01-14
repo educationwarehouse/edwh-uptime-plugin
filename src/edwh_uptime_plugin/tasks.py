@@ -487,7 +487,7 @@ def defer(callback: typing.Callable[[], None]):
 
 
 @task
-def maintenance(_: Context, friendly_name: str, duration: int = 60, dashboard_id: int | str = None):
+def maintenance(c: Context, friendly_name: str, duration: int = 60, dashboard_id: int | str = None):
     """
     Start a new maintenance window.
 
@@ -548,11 +548,7 @@ def maintenance(_: Context, friendly_name: str, duration: int = 60, dashboard_id
     # 3. on kill/done remove window
 
     def cleanup(*_):
-        cprint("Removing maintenance window", color="blue")
-        if uptime_robot.delete_maintenance_window(window_id):
-            cprint("Removed maintenance window!", color="green")
-        else:
-            cprint("Something went wrong removing the window...", color="red")
+        unmaintenance(c, window_id)
 
     cancel = defer(cleanup)
 
