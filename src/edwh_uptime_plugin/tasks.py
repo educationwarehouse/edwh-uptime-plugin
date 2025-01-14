@@ -487,7 +487,7 @@ def defer(callback: typing.Callable[[], None]):
 
 
 @task
-def maintenance(_: Context, friendly_name: str, duration: int = 60):
+def maintenance(_: Context, friendly_name: str, duration: int = 60, dashboard_id: int | str = None):
     """
     Start a new maintenance window.
 
@@ -495,16 +495,59 @@ def maintenance(_: Context, friendly_name: str, duration: int = 60):
         _: invoke Context
         friendly_name: descriptive name for the window (e.g. the version you're releasing)
         duration: time in minutes the window will stay if you don't end it manually
+        dashboard_id: optional, id of the dashboard to take the monitors from.
+         - if not added the user will be asked to select a dasboard from a list
 
     usage:
-    ew uptime.maintenance <friendly_name> <duration>
+    ew uptime.maintenance <friendly_name> <duration> <dashboard_id>
     """
     # 1. make window
     window_id = uptime_robot.new_maintenance_window(
         friendly_name, type="once", start_time=datetime.now(), duration=int(duration)
     )
 
-    # 2. on kill/done remove window
+    # 2. if no dashboard_friendly name is provided let the user select a dashboard to take the monitors from.
+    if not dashboard_id:
+        # auto pick or ask:
+        dashboards = uptime_robot.get_psps()
+        dashboard_ids = {_["id"]: _["friendly_name"] for _ in dashboards}
+        if not dashboard_ids:
+            cprint("No dashboards available!", color="red", file=sys.stderr)
+            return
+        elif len(dashboard_ids) == 1:
+            dashboard_id = first(dashboard_ids)
+        else:
+            dashboard_id = interactive_selected_radio_value(
+                dashboard_ids, allow_empty=True,
+                prompt="Select A dashboard to maintain "
+                       "(use arrow keys, spacebar, or digit keys, press 'Enter' to finish):")
+
+    if dashboard_id:
+        # Get the monitors of the dashboard
+        dashboard = uptime_robot.get_psp(idx=dashboard_id)
+        dashboard_monitors = dashboard.get("monitors", [])
+
+        # add the maintenance window to all the monitors.
+        for monitor_id in dashboard_monitors:
+            monitor = uptime_robot.get_monitor(monitor_id=monitor_id, mwindows=1)
+            monitor_mwindows = monitor.get("mwindows")
+
+            # Make a list of maintenance window id's. Add the window_id of the just created maintenance window to it.
+            m_window_id_list = {str(window_id)}
+            for mwindow in monitor_mwindows:
+                m_window_id_list.add(str(mwindow["id"]))
+            m_window_ids_str = "-".join(m_window_id_list)
+
+            # Edit the monitor data.
+            monitor["mwindows"] = m_window_ids_str
+            del monitor["id"]
+            status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor)
+            if status:
+                cprint(f"succesfully added {m_window_ids_str} to {monitor_id}", color="green")
+            else:
+                cprint(f"Edit failed", color="red")
+
+    # 3. on kill/done remove window
 
     def cleanup(*_):
         cprint("Removing maintenance window", color="blue")
@@ -515,7 +558,7 @@ def maintenance(_: Context, friendly_name: str, duration: int = 60):
 
     cancel = defer(cleanup)
 
-    # 3 wait for user to do maintenance
+    # 4 wait for user to do maintenance
     try:
         input(
             "Press enter to end the maintenance window. Press Ctrl-D to exit but keep the maintenance window open for the specified duration. "
