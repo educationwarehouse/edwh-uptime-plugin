@@ -510,7 +510,7 @@ def maintenance(c: Context, friendly_name: str, duration: int = 60, dashboard_id
 
     # 2. if no dashboard_friendly name is provided let the user select a dashboard to take the monitors from.
     if not dashboard_id:
-        dashboard_id = uptime_robot.monitor_selector()
+        dashboard_id = uptime_robot.interactive_monitor_selector()
 
     if dashboard_id:
         # Get the monitors of the dashboard
@@ -585,7 +585,7 @@ def add_dashboard_to_maintenance(_: Context, maintenance_id: int, dashboard_id: 
     """
     # Get dashboard data.
     if not dashboard_id:
-        dashboard_id = uptime_robot.monitor_selector(allow_empty=False)
+        dashboard_id = uptime_robot.interactive_monitor_selector(allow_empty=False)
 
     dashboard_data = uptime_robot.get_psp(idx=dashboard_id)
     if not dashboard_data:

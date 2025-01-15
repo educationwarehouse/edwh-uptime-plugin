@@ -110,7 +110,7 @@ class UptimeRobotMonitor(typing.TypedDict, total=False):
     timeout: NotRequired[int]
     status: NotRequired[int]
     create_datetime: NotRequired[int]
-    mwindows: NotRequired[bool]
+    mwindows: NotRequired[list[UptimeRobotMaintenanceWindow]] | str
 
 
 class MonitorType(enum.Enum):
@@ -291,7 +291,7 @@ class UptimeRobot:
 
         return result
 
-    def get_m_window(self, mwindow_id) -> Optional[UptimeRobotMaintenanceWindow]:
+    def get_m_window(self, mwindow_id: int) -> Optional[UptimeRobotMaintenanceWindow]:
         """
         Return a maintenance window as dict, by id.
 
@@ -362,8 +362,7 @@ class UptimeRobot:
     # def delete_psp(self, psp_id):
     #     return self._post("deletePSP", input_data={"psp_id": psp_id})
 
-    @staticmethod
-    def edit_monitor_backend(monitor_data, maintenance_id):
+    def edit_monitor_backend(self, monitor_data: UptimeRobotMonitor, maintenance_id: int):
         monitor_id = monitor_data["id"]
         mwindows = monitor_data["mwindows"]
         mwindow_ids = {str(mwindow["id"]) for mwindow in mwindows}
@@ -372,7 +371,7 @@ class UptimeRobot:
         # Add the mwindow_ids to a xx-xx-xx format and add this to the monitor mwindows
         monitor_data["mwindows"] = "-".join(mwindow_ids)  # Join the m_window_ids set by "-"
         del monitor_data["id"]  # Delete the id. Otherwise, it is sent double.
-        edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
+        edit_status = self.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
         if edit_status:
             cprint(
                 f"Succesfully added {monitor_id} to {maintenance_id}", color="green"
@@ -380,10 +379,9 @@ class UptimeRobot:
         else:
             cprint(f"Failed to add {monitor_id} to {maintenance_id}", color="red")
 
-    @staticmethod
-    def monitor_selector(allow_empty=True):
+    def interactive_monitor_selector(self, allow_empty=True):
         # auto pick or ask:
-        dashboards = uptime_robot.get_psps()
+        dashboards = self.get_psps()
         dashboard_ids = {_["id"]: _["friendly_name"] for _ in dashboards}
         if not dashboard_ids:
             cprint("No dashboards available!", color="red", file=sys.stderr)
