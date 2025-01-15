@@ -9,6 +9,8 @@ from typing import Any, Optional
 import edwh
 import requests
 from edwh import check_env
+from edwh.helpers import interactive_selected_radio_value
+from termcolor import cprint
 from typing_extensions import NotRequired, Required
 from yayarl import URL
 
@@ -108,6 +110,7 @@ class UptimeRobotMonitor(typing.TypedDict, total=False):
     timeout: NotRequired[int]
     status: NotRequired[int]
     create_datetime: NotRequired[int]
+    mwindows: NotRequired[bool]
 
 
 class MonitorType(enum.Enum):
@@ -207,7 +210,14 @@ class UptimeRobot:
 
         return resp.get("account", {})
 
-    def get_monitors(self, search: str = "", monitor_ids: typing.Iterable[str | int] = (), mwindows = 0) -> list[UptimeRobotMonitor]:
+    def get_monitors(
+        self, search: str = "", monitor_ids: typing.Iterable[str | int] = (), mwindows=False
+    ) -> list[UptimeRobotMonitor]:
+        """
+        Return all monitors as a list.
+
+        :param mwindows: set True to also return the maintenance windows associated to the monitor
+        """
         data = {}
         if search:
             data["search"] = search
@@ -224,7 +234,7 @@ class UptimeRobot:
 
         return result
 
-    def get_monitor(self, monitor_id: str, mwindows = 0) -> Optional[UptimeRobotMonitor]:
+    def get_monitor(self, monitor_id: str, mwindows=False) -> Optional[UptimeRobotMonitor]:
         if monitors := self.get_monitors(monitor_ids=[monitor_id], mwindows=mwindows):
             return monitors[0]
 
@@ -267,7 +277,10 @@ class UptimeRobot:
     # def delete_alert_contact(self, contact_id):
     #     return self._post("deleteAlertContact", input_data={"contact_id": contact_id})
     #
-    def get_m_windows(self, mwindow_id: typing.Iterable[str | int] = ()):
+    def get_m_windows(self, mwindow_id: typing.Iterable[str | int] = ()) -> list[UptimeRobotMaintenanceWindow] | None:
+        """
+        Return all maintenance windows as a dict.
+        """
         data = {}
         if mwindow_id:
             data["mwindows"] = self.format_list(mwindow_id)
@@ -279,6 +292,11 @@ class UptimeRobot:
         return result
 
     def get_m_window(self, mwindow_id) -> Optional[UptimeRobotMaintenanceWindow]:
+        """
+        Return a maintenance window as dict, by id.
+
+        :param mwindow_id: Id of the maintenance window to display.
+        """
         if mwindows := self.get_m_windows(mwindow_id=[mwindow_id]):
             return mwindows[0]
 
@@ -301,7 +319,7 @@ class UptimeRobot:
         )
         return resp.get("mwindow", {}).get("id", 0)
 
-    def edit_m_window(self,new_data):
+    def edit_m_window(self, new_data):
         return self._post("editMWindow", **new_data)
 
     def delete_maintenance_window(self, window_id: int) -> bool:
@@ -343,6 +361,40 @@ class UptimeRobot:
 
     # def delete_psp(self, psp_id):
     #     return self._post("deletePSP", input_data={"psp_id": psp_id})
+
+    @staticmethod
+    def edit_monitor_backend(monitor_data, maintenance_id):
+        monitor_id = monitor_data["id"]
+        mwindows = monitor_data["mwindows"]
+        mwindow_ids = {str(mwindow["id"]) for mwindow in mwindows}
+        mwindow_ids.add(str(maintenance_id))
+
+        # Add the mwindow_ids to a xx-xx-xx format and add this to the monitor mwindows
+        monitor_data["mwindows"] = "-".join(mwindow_ids)  # Join the m_window_ids set by "-"
+        del monitor_data["id"]  # Delete the id. Otherwise, it is sent double.
+        edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
+        if edit_status:
+            cprint(
+                f"Succesfully added {monitor_id} to {maintenance_id}", color="green"
+            )  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+        else:
+            cprint(f"Failed to add {monitor_id} to {maintenance_id}", color="red")
+
+    @staticmethod
+    def monitor_selector(allow_empty=True):
+        # auto pick or ask:
+        dashboards = uptime_robot.get_psps()
+        dashboard_ids = {_["id"]: _["friendly_name"] for _ in dashboards}
+        if not dashboard_ids:
+            cprint("No dashboards available!", color="red", file=sys.stderr)
+            return
+        else:
+            return interactive_selected_radio_value(
+                dashboard_ids,
+                allow_empty=allow_empty,
+                prompt="Select A dashboard to maintain "
+                "(use arrow keys, spacebar, or digit keys, press 'Enter' to finish):",
+            )
 
     @staticmethod
     def format_status(status_code: int) -> str:
