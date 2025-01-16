@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.1 (2025-01-16)
+
+### Fix
+
+* Slight refactoring, rename monitor_change_mwindows and make it more generic ([`6678d25`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/6678d2546f1c95e482d582a7b1cb223eb27c8242))
+
 ## v0.5.0 (2025-01-16)
 
 ### Feature
