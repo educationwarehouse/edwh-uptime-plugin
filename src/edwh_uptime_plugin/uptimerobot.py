@@ -362,30 +362,29 @@ class UptimeRobot:
     # def delete_psp(self, psp_id):
     #     return self._post("deletePSP", input_data={"psp_id": psp_id})
 
-    def edit_monitor_backend(self, monitor_data: UptimeRobotMonitor, maintenance_id: int):
+    def monitor_change_mwindows(
+        self, monitor_data: UptimeRobotMonitor, to_add: typing.Iterable[str] = (), to_remove: typing.Iterable[str] = ()
+    ) -> bool:
+        """
+        Add or remove mwindows for a specific monitor.
+        """
         monitor_id = monitor_data["id"]
         mwindows = monitor_data["mwindows"]
         mwindow_ids = {str(mwindow["id"]) for mwindow in mwindows}
-        mwindow_ids.add(str(maintenance_id))
+        mwindow_ids |= to_add
+        mwindow_ids -= to_remove
 
         # Add the mwindow_ids to a xx-xx-xx format and add this to the monitor mwindows
         monitor_data["mwindows"] = "-".join(mwindow_ids)  # Join the m_window_ids set by "-"
-        del monitor_data["id"]  # Delete the id. Otherwise, it is sent double.
-        edit_status = self.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
-        if edit_status:
-            cprint(
-                f"Succesfully added {monitor_id} to {maintenance_id}", color="green"
-            )  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
-        else:
-            cprint(f"Failed to add {monitor_id} to {maintenance_id}", color="red")
+        monitor_data.pop("id", None)  # Delete the id. Otherwise, it is sent double.
+        return self.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
 
     def interactive_monitor_selector(self, allow_empty=True):
         # auto pick or ask:
         dashboards = self.get_psps()
         dashboard_ids = {_["id"]: _["friendly_name"] for _ in dashboards}
         if not dashboard_ids:
-            cprint("No dashboards available!", color="red", file=sys.stderr)
-            return
+            return cprint("No dashboards available!", color="red", file=sys.stderr)
         else:
             return interactive_selected_radio_value(
                 dashboard_ids,

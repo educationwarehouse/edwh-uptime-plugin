@@ -39,8 +39,7 @@ def auto_add_to_dashboard(ctx: Context, monitor_ids: list[str | int], dashboard_
         dashboards = uptime_robot.get_psps()
         dashboard_ids = {_["id"]: _["friendly_name"] for _ in dashboards}
         if not dashboard_ids:
-            cprint("No dashboards available!", color="red", file=sys.stderr)
-            return
+            return cprint("No dashboards available!", color="red", file=sys.stderr)
         elif len(dashboard_ids) == 1:
             dashboard_id = first(dashboard_ids)
         else:
@@ -65,14 +64,13 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
 
     ran_before = edwh.get_env_value("UPTIME_AUTOADD_DONE", "0") == "1"
     if ran_before and not force:
-        cprint(
+        return cprint(
             "Auto-add flag already set; "
             "Remove 'UPTIME_AUTOADD_DONE' from your .env to allow rerunning, or set --force. "
             "Stopping now.",
             color=None if quiet else "yellow",
             file=sys.stderr,
         )
-        return
 
     directory = directory or "."
 
@@ -494,7 +492,7 @@ def maintenance(c: Context, friendly_name: str, duration: int = 60, dashboard_id
     Start a new maintenance window.
 
     Args:
-        _: invoke Context
+        c: invoke Context
         friendly_name: descriptive name for the window (e.g. the version you're releasing)
         duration: time in minutes the window will stay if you don't end it manually
         dashboard_id: optional, id of the dashboard to take the monitors from.
@@ -509,18 +507,25 @@ def maintenance(c: Context, friendly_name: str, duration: int = 60, dashboard_id
     )
 
     # 2. if no dashboard_friendly name is provided let the user select a dashboard to take the monitors from.
+    dashboard_id = dashboard_id or uptime_robot.interactive_monitor_selector()
+
     if not dashboard_id:
-        dashboard_id = uptime_robot.interactive_monitor_selector()
+        return
 
-    if dashboard_id:
-        # Get the monitors of the dashboard
-        dashboard = uptime_robot.get_psp(idx=dashboard_id)
-        dashboard_monitors = dashboard.get("monitors", [])
+    # Get the monitors of the dashboard
+    dashboard = uptime_robot.get_psp(idx=dashboard_id)
+    dashboard_monitors = dashboard.get("monitors", [])
 
-        # add the maintenance window to all the monitors.
-        for monitor_id in dashboard_monitors:
-            monitor = uptime_robot.get_monitor(monitor_id=monitor_id, mwindows=1)
-            uptime_robot.edit_monitor_backend(monitor_data=monitor, maintenance_id=window_id)
+    # add the maintenance window to all the monitors.
+    for monitor_id in dashboard_monitors:
+        monitor = uptime_robot.get_monitor(monitor_id=monitor_id, mwindows=1)
+        edit_status = uptime_robot.monitor_change_mwindows(monitor_data=monitor, to_add=[str(window_id)])
+        if edit_status:
+            cprint(
+                f"Succesfully modified {monitor_id} maintenance window(s)", color="green"
+            )  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+        else:
+            cprint(f"Failed to modified {monitor_id} to maintenance window(s)", color="red")
 
     # 3. on kill/done remove window
 
@@ -571,7 +576,13 @@ def add_monitor_to_maintenance(_: Context, maintenance_id: int, monitor_id: int)
         cprint(f"Edit Failed. No maintenance window {maintenance_id} found.", color="red")
         return
 
-    uptime_robot.edit_monitor_backend(monitor_data=monitor_data, maintenance_id=maintenance_id)
+    edit_status = uptime_robot.monitor_change_mwindows(monitor_data=monitor_data, to_add=[str(maintenance_id)])
+    if edit_status:
+        cprint(
+            f"Succesfully modified {monitor_id} maintenance window(s)", color="green"
+        )  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+    else:
+        cprint(f"Failed to modified {monitor_id} to maintenance window(s)", color="red")
 
 
 @task
@@ -584,19 +595,16 @@ def add_dashboard_to_maintenance(_: Context, maintenance_id: int, dashboard_id: 
     If not provided the user will be presented with a dashboard selection menu.
     """
     # Get dashboard data.
-    if not dashboard_id:
-        dashboard_id = uptime_robot.interactive_monitor_selector(allow_empty=False)
+    dashboard_id = dashboard_id or uptime_robot.interactive_monitor_selector(allow_empty=False)
 
     dashboard_data = uptime_robot.get_psp(idx=dashboard_id)
     if not dashboard_data:
-        cprint(f"{dashboard_id} is not an valid dashboard_id.", color="red")
-        return
+        return cprint(f"{dashboard_id} is not an valid dashboard_id.", color="red")
 
     # Get maintenance window data.
     m_window_data = uptime_robot.get_m_window(int(maintenance_id))
     if not m_window_data:
-        cprint("Edit Failed. No available maintenance windows.", color="red")
-        return
+        return cprint("Edit Failed. No available maintenance windows.", color="red")
 
     # Search for the monitors in a dashboard and add the maintenance window_id to them
     dashboard_monitors = dashboard_data.get("monitors", [])
@@ -604,7 +612,13 @@ def add_dashboard_to_maintenance(_: Context, maintenance_id: int, dashboard_id: 
     for monitor_id in dashboard_monitors:
         # Get the monitor data
         current_monitor = uptime_robot.get_monitor(monitor_id=monitor_id, mwindows=1)
-        uptime_robot.edit_monitor_backend(monitor_data=current_monitor, maintenance_id=maintenance_id)
+        edit_status = uptime_robot.monitor_change_mwindows(monitor_data=current_monitor, to_add=[str(maintenance_id)])
+        if edit_status:
+            cprint(
+                f"Succesfully modified {monitor_id} maintenance window(s)", color="green"
+            )  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
+        else:
+            cprint(f"Failed to modified {monitor_id} to maintenance window(s)", color="red")
 
 
 @task
@@ -632,20 +646,13 @@ def remove_monitor_from_maintenance(_: Context, maintenance_id: int, monitor_id:
     if not monitor_mwindows:
         return cprint("maintenance window and monitor are already not linked.", color="blue")
 
-    # Add a mwindow id to m_window_ids if the id is not equal to the provided maintenance_id
-    m_window_ids = {str(mwindow["id"]) for mwindow in monitor_mwindows if int(mwindow["id"]) != int(maintenance_id)}
-
-    # Set the monitor data
-    monitor_data["mwindows"] = "-".join(m_window_ids)  # Join the m_window_ids set by "-"
-    del monitor_data["id"]  # Delete the id. Otherwise, it is sent double.
-
-    edit_status = uptime_robot.edit_monitor(monitor_id=monitor_id, new_data=monitor_data)
+    edit_status = uptime_robot.monitor_change_mwindows(monitor_data=monitor_data, to_remove=[str(maintenance_id)])
     if edit_status:
         cprint(
-            f"Succesfully removed {monitor_id} from {maintenance_id}", color="green"
+            f"Succesfully modified {monitor_id} maintenance window(s)", color="green"
         )  # Eigenlijk andersom maar om de logica voor de gebruiker aan te houden
     else:
-        cprint("Failed", color="red")
+        cprint(f"Failed to modified {monitor_id} to maintenance window(s)", color="red")
 
 
 @task
@@ -682,16 +689,13 @@ def unmaintenance(_: Context, window: int | str):
     window_data = uptime_robot.get_m_windows()  # Get all maintenance windows.
 
     if not window_data:
-        cprint("No active maintenance windows found.", color="red")
-        return
+        return cprint("No active maintenance windows found.", color="red")
 
     for active_maintenance_window in window_data:  # loop through the active maintenance windows in window_data.
         if str(active_maintenance_window["id"]) == str(window):  # If the id matches the user input.
-            remove_maintenance_window(active_maintenance_window["id"])
-            return
+            return remove_maintenance_window(active_maintenance_window["id"])
         elif active_maintenance_window["friendly_name"] == window:  # If the friendly name matches the user input.
-            remove_maintenance_window(active_maintenance_window["id"])
-            return
+            return remove_maintenance_window(active_maintenance_window["id"])
 
     cprint(f"No maintenance window {window} found.", color="red")
 
