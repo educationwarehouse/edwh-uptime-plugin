@@ -15,6 +15,7 @@ pytest.allowed_apikey = None
 
 # FIXME: Note - Free Plans rate limits: 10 requests/minute
 
+
 def new_safe_uptimerobot():
     instance = UptimeRobot()
 
@@ -54,7 +55,7 @@ def clean_uptimerobot(uptime_robot):
     # remove all monitors
     monitors = uptime_robot.get_monitors()
     for monitor in monitors:
-        uptime_robot.delete_monitor(monitor['id'])
+        uptime_robot.delete_monitor(monitor["id"])
 
     assert not uptime_robot.get_monitors(), "Some monitors were not removed - can not continue test!"
 
@@ -81,9 +82,9 @@ def test_simple(uptime_robot, clean_uptimerobot):
 
     assert monitor
 
-    assert monitor['friendly_name'] == "Monitor 1"
+    assert monitor["friendly_name"] == "Monitor 1"
 
     assert len(uptime_robot.get_monitors()) == 1
-    uptime_robot.delete_monitor(monitor['monitor_id'])
+    uptime_robot.delete_monitor(monitor["monitor_id"])
 
     assert len(uptime_robot.get_monitors()) == 0
