@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.2 (2025-01-16)
+
+### Fix
+
+* Convert mwindow_ids to set from generic iterable ([`2202f87`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/2202f87bf7b05c79e395d6d5c748ac28389f8191))
+
 ## v0.5.1 (2025-01-16)
 
 ### Fix
