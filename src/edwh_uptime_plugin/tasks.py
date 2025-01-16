@@ -90,7 +90,7 @@ def auto_add(ctx: Context, directory: str = None, force: bool = False, quiet: bo
 
         if not domains:
             cprint(
-                "No docker services/domains found; " "Could not auto-add anything.",
+                "No docker services/domains found; Could not auto-add anything.",
                 color=None if quiet else "red",
                 file=sys.stderr,
             )
