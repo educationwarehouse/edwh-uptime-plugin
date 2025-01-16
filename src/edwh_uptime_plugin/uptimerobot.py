@@ -371,8 +371,8 @@ class UptimeRobot:
         monitor_id = monitor_data["id"]
         mwindows = monitor_data["mwindows"]
         mwindow_ids = {str(mwindow["id"]) for mwindow in mwindows}
-        mwindow_ids |= to_add
-        mwindow_ids -= to_remove
+        mwindow_ids |= set(to_add)
+        mwindow_ids -= set(to_remove)
 
         # Add the mwindow_ids to a xx-xx-xx format and add this to the monitor mwindows
         monitor_data["mwindows"] = "-".join(mwindow_ids)  # Join the m_window_ids set by "-"
