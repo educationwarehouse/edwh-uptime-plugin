@@ -2,6 +2,35 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.0 (2025-01-16)
+
+### Feature
+
+* Option to remove A single maintenance window with unmaintenance <window_id> or <friendly_name>, renamed the unmaintenance function to unmaintenance_all. This also has a verification added to it. ([`5b8e87a`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/5b8e87a65293b3098b01fab57703a338beb2dd38))
+
+### Fix
+
+* More requested changes PR. 1 ([`f148979`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/f14897902735825473bab595dc96443f99d7290e))
+* Requested changes PR. 1 ([`24fb723`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/24fb723034ddf2a9dfcdfe28f476ddedeae545ab))
+* Maintenance cleanup gebruikt nu unmaintenance ([`5a79987`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/5a7998754030a41b3a33b76d6cc468d9752eee8e))
+* Unmaintenance pauzeert de maintenance window voordat deze verwijderd wordt. ([`83d822b`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/83d822be440f5ef971081b0f6bf46a67ffb10e7f))
+* Geen automatische selectie dashboard in maintenance ([`b1a525a`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/b1a525a34fe32564c1cd5dfb1357f99b13fe6804))
+* Unmaintenane will not print the maintenance window could not be found for every maintenance window anymore. ([`2ca6aba`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/2ca6aba061be38d65dfba53f7ad1bc7aac84772e))
+* Maintenance now asks the user to select a dashboard to maintain. selecting a dashboard will add all the just made mwindow to all monitors in the dashboard. ([`5f4b8a7`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/5f4b8a73582cac4e9c7d04ae02907eed663be147))
+* Print toggle maintenance is nu cprint ([`d9e2173`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/d9e217387474c1f1e6768257ddd62dad0dbf103e))
+* Prints verwijderd ([`49b6452`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/49b6452d4cfe24ba9fc2e2ebe6f3dcd914274e49))
+* Remove-monitor-from-maintenance is af werkt alleen niet voor de laatste mwindow. Omdat de api een lege string als mwindow niet begrijpt. ([`97f4e6b`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/97f4e6b67aff9977198bcc74c124ad5f6abfad34))
+* Add_monitor_to_maintenance voegt nu een maintenance toe in plaats van ze allemaal te vervangen door 1. ([`326789b`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/326789b86175486c82136b6a91d6fc296a0659b9))
+* Get_monitors en get monitor functies aangepast zodat deze het argument mwindows=1 kunnen aannemen om de maintenance windows van een monitor op te kunnen halen. ([`8c481e1`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/8c481e16ef09263cf7d56200e33e5101a79ceac1))
+* Add_dashboard_monitors_to_maintenance functie is gefixt. ([`cb41646`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/cb41646441e9d5d9755ae88ba30806052d32dbe4))
+* Soms was de verwachte waarde van tijd 1 sec te laat voor de api. dus huidige tijd + 1 sec. En wat documentatie. ([`30a61ad`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/30a61ad535fb364e47b41a954cce23b7d6779916))
+* 'Removal of window failed.' text fix ([`3d02f61`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/3d02f613904ed3ab94b129662a61b86968d25951))
+* Yes set verkleint. ([`e84a17f`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/e84a17f13b59d639e71598f995a7de02c8cdc19e))
+
+### Documentation
+
+* Inline docs updated. ([`94d6b78`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/94d6b78e9e147f1eb45bb835fbfb441e7d706476))
+
 ## v0.4.0 (2024-09-12)
 
 ### Feature
