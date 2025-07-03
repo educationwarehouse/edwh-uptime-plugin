@@ -11,13 +11,14 @@ from pathlib import Path
 from typing import Optional
 
 import edwh
+from edwh import task
 from edwh.helpers import (
     confirm,
     interactive_selected_checkbox_values,
     interactive_selected_radio_value,
 )
 from edwh.tasks import dc_config, get_hosts_for_service
-from invoke import Context, task
+from invoke import Context
 from termcolor import cprint
 
 from .dumpers import DEFAULT_PLAINTEXT, DEFAULT_STRUCTURED, SUPPORTED_FORMATS, dumpers
