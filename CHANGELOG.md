@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.3 (2025-07-03)
+
+### Fix
+
+* Use `edwh.task` instead of `invoke.task` ([`eab926d`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/eab926dcf711c641e7915e74ba8f3a19e60bd94f))
+
 ## v0.5.2 (2025-01-16)
 
 ### Fix
