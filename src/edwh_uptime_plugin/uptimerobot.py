@@ -1,3 +1,4 @@
+import contextlib
 import datetime as dt
 import enum
 import json
@@ -130,11 +131,12 @@ class UptimeRobot:
     @property
     def api_key(self) -> str:
         if not self._api_key:
-            self._api_key = check_env(
-                "UPTIMEROBOT_APIKEY",
-                default="",
-                comment="The API key used to manage UptimeRobot monitors.",
-            )
+            with contextlib.suppress(RuntimeError):
+                self._api_key = check_env(
+                    "UPTIMEROBOT_APIKEY",
+                    default="",
+                    comment="The API key used to manage UptimeRobot monitors.",
+                )
 
         return self._api_key
 
