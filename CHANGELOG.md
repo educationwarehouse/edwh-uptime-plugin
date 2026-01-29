@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.4 (2026-01-29)
+
+### Fix
+
+* Catch RuntimeError (e.g. for when running setup --non-interactive) ([`7575a09`](https://github.com/educationwarehouse/edwh-uptime-plugin/commit/7575a09b26352d055796a16e32ffbd73737a935f))
+
 ## v0.5.3 (2025-07-03)
 
 ### Fix
