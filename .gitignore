@@ -10,3 +10,4 @@ config.toml
 coverage.*
 *.bak
 
+uv.lock
